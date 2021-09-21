@@ -1,0 +1,1417 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/08/30 $
+#
+# Description : This audit is based on the Security Configuration Benchmark For MySQL 8.0 Enterprise Editions
+#             Version 1.0.0
+#
+#<ui_metadata>
+#<display_name>CIS MySQL 8.0 Enterprise Database L2 v1.0.0</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>MySQL 8.0 Enterprise Database L2</name>
+#  <version>1.0.0</version>
+#  <link>https://workbench.cisecurity.org/files/3269</link>
+#</spec>
+#<labels>database,cis,mysql,mysql_8,mysql_8.0,mysql_8.0_enterprise</labels>
+#<benchmark_refs>LEVEL,CIS_Recommendation</benchmark_refs>
+#</ui_metadata>
+
+<check_type:"Database" db_type:"MySQL" version:"1">
+<group_policy:"MySQL CIS 1.0.0">
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type         : SQL_POLICY
+      description  : "MySQL 8.0 is installed"
+      sql_request  : "show variables like 'version' ;"
+      sql_types    : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect   : "version", regex:"8\..*"
+      check_option : CAN_NOT_BE_NULL
+    </custom_item>
+
+    <custom_item>
+      type         : SQL_POLICY
+      description  : "MySQL 8.0 Enterprise Edition is installed"
+      sql_request  : "show variables like 'license' ;"
+      sql_types    : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect   : "license", "Commercial"
+      check_option : CAN_NOT_BE_NULL
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "CIS_MySQL_8.0_Enterprise_Benchmark_v1.0.0_Level_2_DB.audit from CIS Oracle MySQL 8.0 Enterprise Edition v1.0.0"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+    </report>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.1.5 Point-in-Time Recovery"
+      info        : "With binlogs it is possible to implement point-in-time recovery. This makes it possible to restore the changes between the last full backup and the point-in-time.
+
+    Enabling binlogs is not sufficient. The binlogs need to be backed up to separate media. The restore procedure should be created and tested. The data in the binlog files may contain sensitive information which needs be stored in the proper location with restrictive permissions and may require encryption. Binlogs can grow quite large and take up a large amount of space so auto remove needs to be put into place.
+
+    Rationale:
+
+    Using binlogs can reduce the amount of information lost when recovering from a backup.
+
+    Impact:
+
+    Without point-in-time recovery, any data which was stored between the last backup and the time of a disaster might not be recoverable."
+      solution    : "Enable binlogs, then create and test a restore procedure.
+
+
+
+
+    Default Value:
+
+    The default for binlog-expire-logs-second is 2592000 seconds, or 30 days."
+      reference   : "800-171|3.8.9,800-53|CP-9.,CIS_Recommendation|2.1.5,CSF|PR.IP-4,ISO/IEC-27001|A.12.3.1,ITSG-33|CP-9,LEVEL|2A,NESA|M5.2.3,NESA|T2.2.4"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : " SELECT VARIABLE_NAME, VARIABLE_VALUE, 'BINLOG - Log Expiration' as Note FROM performance_schema.global_variables where variable_name = 'binlog_expire_logs_seconds';"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "binlog_expire_logs_seconds", regex:"^[1-9][0-9]*$"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.10 Require Current Password for Password Reset"
+      info        : "Require the current password for password reset.
+
+    Rationale:
+
+    Requiring a prior password for password reset enables DBAs to prevent users from changing a password without proving that they know the current password. Such changes could otherwise occur, for example, if one user walks away from a terminal session temporarily without logging out, and a malicious user uses the session to change the original user's MySQL password. This can have unfortunate consequences; the most problematic being the malicious user can access MySQL with the user's changed credentials."
+      solution    : "Set the value to ON
+
+    SET PERSIST password_require_current=ON;
+
+    Default Value:
+
+    The password_require_current is OFF my default."
+      reference   : "800-171|3.5.2,800-53|IA-5.,CIS_Recommendation|2.10,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|2A,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME in ('password_require_current');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "password_require_current", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.11 Use Dual Passwords to Enable Higher Frequency Password Rotation"
+      info        : "Dual passwords act as a tool to encourage password rotations in cases where a synchronized password change is not viable. By having a time delta to have old and new passwords in place, the process of replacing old passwords with new passwords within applications is simplified.
+
+    Rationale:
+
+    Too often passwords used by applications are not changed regularly because of the difficulty in timing for propagating the new password, keeping the applications connected, and connection failures due to race conditions. If it is difficult to perform a synchronized change you can optionally use dual passwords to simplify the task of password rotation.
+
+    Impact:
+
+    If the original password isn't removed upon completion of the password rotation process, the potential risk for a compromise is increased.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+      solution    : "To set dual passwords execute the following ALTER command:
+
+    ALTER USER '<user>'@'<hostname>'
+      IDENTIFIED BY '<new_password>'
+      RETAIN CURRENT PASSWORD;
+
+    Once the new password has been distributed DISCARD the old password using ALTER:
+
+    ALTER USER '<user>'@'<hostname>'
+      DISCARD OLD PASSWORD;"
+      reference   : "800-171|3.5.2,800-53|IA-5.,CIS_Recommendation|2.11,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|2M,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT user, host FROM mysql.user WHERE length(user_attributes >'$.additional_password')>0;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : "ManualReviewRequired"
+      severity    : MEDIUM
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.12 Lock Out Accounts if Not Currently in Use"
+      info        : "If users with accounts will not be using their account for some time, to reduce the risk of attacks or inappropriate account usage or if suspicions exist that an account might be under attack, disabling the account will secure it and once it's ready to resume use it can easily be re-enabled.
+
+    Rationale:
+
+    Only have active accounts that will be used.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+      solution    : "To lock accounts - example:
+
+    ALTER USER 'jeffrey'@'localhost' ACCOUNT LOCK;
+
+    To unlock accounts - example
+
+    ALTER USER 'jeffrey'@'localhost' ACCOUNT UNLOCK;
+
+    Note: Works for CREATE as well. It is good practice to LOCK an account if created ahead of time.
+
+    Default Value:
+
+    Accounts are unlocked by default."
+      reference   : "800-171|3.1.8,800-53|AC-7.,CIS_Recommendation|2.12,CN-L3|8.1.4.1(b),ITSG-33|AC-7,LEVEL|2M,NIAv2|AM24,TBA-FIISB|36.2.4,TBA-FIISB|45.1.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "select user, host, account_locked from mysql.user;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : "ManualReviewRequired"
+      severity    : MEDIUM
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.13 Ensure AES Encryption Mode for AES_ENCRYPT/AES_DECRYPT is Configured Correctly"
+      info        : "A block encryption mode with a Cypher Block Chaining (CBC) mode value and key length of 256 is recommended when using the AES_ENCRYPT() and AES_DECRYPT() functions for encryption.
+
+    Rationale:
+
+    The default for backward compatibility on upgraded MySQL databases is aes-128-ecb. Using 128-bit keys does not provide sufficient security. Regardless of whether breaking the lowest level is beyond existing technology, larger key sizes are needed to better protect data and satisfy regulations.
+
+    Impact:
+
+    Configuring a key length of 256 may impact backwards compatibility."
+      solution    : "Add the following lines to the MySQL server's /etc/my.cnf:
+
+    For example, if Block Encryption Mode for aes-256 CBC
+
+    block_encryption_mode=aes-256-cbc
+
+    Or, run the following command:
+
+    set persist block_encryption_mode='aes-256-cbc';
+
+    Restart the server for this change to take effect.
+
+    Default Value:
+
+    aes-128-ecb"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|2.13,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "select @@block_encryption_mode;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : regex:"aes-256-(ECB|CBC|CFB1|CFB8|CFB128|OFB)"
+    </custom_item>
+
+    <if>
+      <condition type:"AND">
+        <custom_item>
+          type        : SQL_POLICY
+          description : "auth_socket enabled"
+          sql_request : " SELECT PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS WHERE PLUGIN_NAME LIKE 'auth%';"
+          sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+          sql_expect  : "auth_socket", "ACTIVE"
+        </custom_item>
+      </condition>
+
+      <then>
+        <custom_item>
+          type        : SQL_POLICY
+          description : "2.14 Ensure Socket Peer-Credential Authentication is Used Appropriately"
+          info        : "The server-side auth_socket authentication plugin, authenticates clients that connect to the MySQL server from the local host through the Unix socket file. Users authenticated by the auth_socket need not specify a password when connecting to the server. However, users authenticated by the auth_socket plugin are restricted from connecting remotely; they can only connect from the local host through the Unix socket file. This method is only suitable in situations where the server administrator OS account access is restricted.
+
+    Rationale:
+
+    This method may be desirable in specific cases, including:
+
+    The Linux system where MySQL is running is dedicated to the MySQL server and only the MySQL DBA and OS Admin have access.
+
+    When control over user authentication is centralized in the operating system.
+
+    It is desirable that audit trails in the database and operating system can use the same user names.
+
+    For certain other narrow installation use cases auth_socket may be desirable.
+
+    Only local connections for a user.
+
+    Impact:
+
+    Things to consider when using the operating system to authenticate users:
+
+    The user must have an operating system account on the computer which must be accessed.
+
+    If a user has logged in using this method and steps away from the terminal, another user could easily log in because this user does not need any passwords or credentials. This could pose a serious security problem.
+
+    When an operating system is used to authenticate database users, managing distributed database environments and database links requires special care. Special care must also be taken not to leave such a terminal unlocked and unattended. Hence, we recommend that you carefully evaluate your requirements before opting for auth_socket.
+
+    This will not work where distributed connections are required.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+          solution    : "Add these options under the [mysqld] option group in the MySQL /etc/my.cnf:
+
+    plugin-load-add=auth_socket.so
+    auth_socket=FORCE_PLUS_PERMANENT
+
+    For example:
+    For an OS user which can login to MySQL using auth_socket:
+
+    CREATE USER '<user>'@'localhost' IDENTIFIED WITH auth_socket;
+
+    The user can then login using
+
+    mysql -u <user>"
+          reference   : "800-171|3.1.17,800-53|AC-18(1),CIS_Recommendation|2.14,CSF|PR.PT-4,ITSG-33|AC-18(1),LEVEL|2M,NESA|T5.4.2,NIAv2|NS33,NIAv2|NS34,NIAv2|NS38,QCSC-v1|5.2.1,SWIFT-CSCv1|2.3"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          sql_request : "select user, host, plugin from mysql.user where plugin = 'auth_socket';"
+          sql_types   : POLICY_VARCHAR
+          sql_expect  : "ManualReviewRequired"
+          severity    : MEDIUM
+        </custom_item>
+      </then>
+
+      <else>
+        <report type:"PASSED">
+          description : "2.14 Ensure Socket Peer-Credential Authentication is Used Appropriately"
+          info        : "The server-side auth_socket authentication plugin, authenticates clients that connect to the MySQL server from the local host through the Unix socket file. Users authenticated by the auth_socket need not specify a password when connecting to the server. However, users authenticated by the auth_socket plugin are restricted from connecting remotely; they can only connect from the local host through the Unix socket file. This method is only suitable in situations where the server administrator OS account access is restricted.
+
+    Rationale:
+
+    This method may be desirable in specific cases, including:
+
+    The Linux system where MySQL is running is dedicated to the MySQL server and only the MySQL DBA and OS Admin have access.
+
+    When control over user authentication is centralized in the operating system.
+
+    It is desirable that audit trails in the database and operating system can use the same user names.
+
+    For certain other narrow installation use cases auth_socket may be desirable.
+
+    Only local connections for a user.
+
+    Impact:
+
+    Things to consider when using the operating system to authenticate users:
+
+    The user must have an operating system account on the computer which must be accessed.
+
+    If a user has logged in using this method and steps away from the terminal, another user could easily log in because this user does not need any passwords or credentials. This could pose a serious security problem.
+
+    When an operating system is used to authenticate database users, managing distributed database environments and database links requires special care. Special care must also be taken not to leave such a terminal unlocked and unattended. Hence, we recommend that you carefully evaluate your requirements before opting for auth_socket.
+
+    This will not work where distributed connections are required.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+          solution    : "Add these options under the [mysqld] option group in the MySQL /etc/my.cnf:
+
+    plugin-load-add=auth_socket.so
+    auth_socket=FORCE_PLUS_PERMANENT
+
+    For example:
+    For an OS user which can login to MySQL using auth_socket:
+
+    CREATE USER '<user>'@'localhost' IDENTIFIED WITH auth_socket;
+
+    The user can then login using
+
+    mysql -u <user>"
+          reference   : "800-171|3.1.17,800-53|AC-18(1),CIS_Recommendation|2.14,CSF|PR.PT-4,ITSG-33|AC-18(1),LEVEL|2M,NESA|T5.4.2,NIAv2|NS33,NIAv2|NS34,NIAv2|NS38,QCSC-v1|5.2.1,SWIFT-CSCv1|2.3"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+        </report>
+      </else>
+    </if>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.15 Ensure MySQL is Bound to an IP Address"
+      info        : "By default, the MySQL server accepts TCP/IP connections from MySQL user accounts on all server host IPv6 and IPv4 interfaces. You can make this configuration more restrictive by setting the bind_address configuration option to a specific IPv4 or IPv6 address so that the server only accepts TCP/IP connections on that address.
+
+    Rationale:
+
+    Limiting the IP address provides additional controls and restrictions on how client applications can connect to MySQL. If not configured to a specific IP all IPs for this server can be used to connect to MySQL."
+      solution    : "For example, to have the MySQL server only accept connections on a specific IPv4 address, add an entry similar to this under the [mysqld] option group in the MySQL /etc/my.cnf:
+
+    bind_address=192.0.2.24
+
+    In this case, clients can connect to the server using --host=192.0.2.24. Connections on other server host addresses are not permitted.
+
+    Default Value:
+
+    Not set."
+      reference   : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|2.15,CN-L3|8.1.10.6(j),CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables WHERE VARIABLE_NAME = 'bind_address';"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "bind_address", regex:"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.16 Limit Accepted Transport Layer Security (TLS) Versions"
+      info        : "MySQL supports multiple protocols of TLS. The higher the version the stronger the security and/or better the performance.
+
+    Rationale:
+
+    Requiring clients attempting to connect to MySQL to use higher versions of TLS to better protect data in transit.
+
+    Impact:
+
+    Connections attempting to use an unsupported version of TLS or Cipher will fail."
+      solution    : "Set the version(s) of TLS you wish to accept in mysql.conf specify TLS and Ciphers.
+    For example to only accept TLS 1.3 set tls_version in my.conf:
+
+    tls_version=TLSv1.3
+
+    If TLS 1.3 is not supported on the Operating System then set to TLS 1.2:
+
+    tls_version=TLSv1.2
+
+    Note: with this setting, only clients that support the specified TLS version(s) are able to establish an encrypted connection to the server.
+
+    Default Value:
+
+    All TLS and cipher versions are enabled by default."
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|2.16,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "select @@tls_version;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : regex:"^TLSv1\.(2|3)(,|$)"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.17 Require Client-Side Certificates (X.509)"
+      info        : "Client-side certificates may be used as proof of identity as well as to encrypt data in transit.
+
+    Rationale:
+
+    Requiring client-side certificates provides additional validation of a user's identity, thus increasing the level of security, while also providing strong encryption.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+      solution    : "Create or Alter users using the REQUIRE X509.
+    For example:
+
+    CREATE USER 'newuser2'@'%' IDENTIFIED BY <password> require x509;
+
+    For accounts created with a REQUIRE X509 clause, clients must specify at least --ssl-cert and --ssl-key. In addition, --ssl-ca (or --ssl-capath) is recommended so that the public certificate provided by the server can be verified.
+
+    For example:
+
+    mysql --ssl-ca=ca.pem \
+          --ssl-cert=client-cert.pem \
+          --ssl-key=client-key.pem"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|2.17,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "select user, host, ssl_type from mysql.user;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : "ManualReviewRequired"
+      severity    : MEDIUM
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.18 Ensure Only Approved Ciphers are Used - ssl_cipher"
+      info        : "MySQL supports multiple encryption ciphers. Ciphers can vary in strength, speed and overhead.
+
+    Rationale:
+
+    Requiring clients attempting to connect to MySQL to use strong ciphers protects data in transit.
+
+    Impact:
+
+    Connections attempting to use an unsupported cipher will fail."
+      solution    : "Set ssl_ciphers and tls_ciphersuites in the mysql.conf to an approved cipher suite:
+
+    tls_ciphersuites='TLS_AES_256_GCM_SHA384'
+    ssl_ciphers='ECDHE-ECDSA-AES128-GCM-SHA256'
+
+    OR
+    Execute the following commands:
+
+    set persist ssl_cipher='ECDHE-ECDSA-AES128-GCM-SHA256';
+    set persist tls_ciphersuites='TLS_AES_256_GCM_SHA384';
+
+    Default Value:
+
+    ECDHE-ECDSA-AES128-GCM-SHA256
+
+    ECDHE-ECDSA-AES256-GCM-SHA384
+
+    ECDHE-RSA-AES128-GCM-SHA256
+
+    ECDHE-RSA-AES256-GCM-SHA384
+
+    ECDHE-ECDSA-AES128-SHA256
+
+    ECDHE-RSA-AES128-SHA256
+
+    ECDHE-ECDSA-AES256-SHA384
+
+    ECDHE-RSA-AES256-SHA384
+
+    DHE-RSA-AES128-GCM-SHA256
+
+    DHE-DSS-AES128-GCM-SHA256
+
+    DHE-RSA-AES128-SHA256
+
+    DHE-DSS-AES128-SHA256
+
+    DHE-DSS-AES256-GCM-SHA384
+
+    DHE-RSA-AES256-SHA256
+
+    DHE-DSS-AES256-SHA256
+
+    ECDHE-RSA-AES128-SHA
+
+    ECDHE-ECDSA-AES128-SHA
+
+    ECDHE-RSA-AES256-SHA
+
+    ECDHE-ECDSA-AES256-SHA
+
+    DHE-DSS-AES128-SHA
+
+    DHE-RSA-AES128-SHA
+
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA
+
+    DHE-RSA-AES256-SHA
+
+    AES128-GCM-SHA256
+
+    DH-DSS-AES128-GCM-SHA256
+
+    ECDH-ECDSA-AES128-GCM-SHA256
+
+    AES256-GCM-SHA384
+
+    DH-DSS-AES256-GCM-SHA384
+
+    ECDH-ECDSA-AES256-GCM-SHA384
+
+    AES128-SHA256
+
+    DH-DSS-AES128-SHA256
+
+    ECDH-ECDSA-AES128-SHA256
+
+    AES256-SHA256
+
+    DH-DSS-AES256-SHA256
+
+    ECDH-ECDSA-AES256-SHA384
+
+    AES128-SHA
+
+    DH-DSS-AES128-SHA
+
+    ECDH-ECDSA-AES128-SHA
+
+    AES256-SHA
+
+    DH-DSS-AES256-SHA
+
+    ECDH-ECDSA-AES256-SHA
+
+    DHE-RSA-AES256-GCM-SHA384
+
+    DH-RSA-AES128-GCM-SHA256
+
+    ECDH-RSA-AES128-GCM-SHA256
+
+    DH-RSA-AES256-GCM-SHA384
+
+    ECDH-RSA-AES256-GCM-SHA384
+
+    DH-RSA-AES128-SHA256
+
+    ECDH-RSA-AES128-SHA256
+
+    DH-RSA-AES256-SHA256
+
+    ECDH-RSA-AES256-SHA384
+
+    ECDHE-RSA-AES128-SHA
+
+    ECDHE-ECDSA-AES128-SHA
+
+    ECDHE-RSA-AES256-SHA
+
+    ECDHE-ECDSA-AES256-SHA
+
+    DHE-DSS-AES128-SHA
+
+    DHE-RSA-AES128-SHA
+
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA
+
+    DHE-RSA-AES256-SHA
+
+    AES128-SHA
+
+    DH-DSS-AES128-SHA
+
+    ECDH-ECDSA-AES128-SHA
+
+    AES256-SHA
+
+    DH-DSS-AES256-SHA
+
+    ECDH-ECDSA-AES256-SHA
+
+    DH-RSA-AES128-SHA
+
+    ECDH-RSA-AES128-SHA
+
+    DH-RSA-AES256-SHA
+
+    ECDH-RSA-AES256-SHA
+
+    DES-CBC3-SHA"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|2.18,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables WHERE VARIABLE_NAME IN ('ssl_cipher');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "ssl_cipher", "ECDHE-ECDSA-AES128-GCM-SHA256"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.18 Ensure Only Approved Ciphers are Used - tls_ciphersuites"
+      info        : "MySQL supports multiple encryption ciphers. Ciphers can vary in strength, speed and overhead.
+
+    Rationale:
+
+    Requiring clients attempting to connect to MySQL to use strong ciphers protects data in transit.
+
+    Impact:
+
+    Connections attempting to use an unsupported cipher will fail."
+      solution    : "Set ssl_ciphers and tls_ciphersuites in the mysql.conf to an approved cipher suite:
+
+    tls_ciphersuites='TLS_AES_256_GCM_SHA384'
+    ssl_ciphers='ECDHE-ECDSA-AES128-GCM-SHA256'
+
+    OR
+    Execute the following commands:
+
+    set persist ssl_cipher='ECDHE-ECDSA-AES128-GCM-SHA256';
+    set persist tls_ciphersuites='TLS_AES_256_GCM_SHA384';
+
+    Default Value:
+
+    ECDHE-ECDSA-AES128-GCM-SHA256
+
+    ECDHE-ECDSA-AES256-GCM-SHA384
+
+    ECDHE-RSA-AES128-GCM-SHA256
+
+    ECDHE-RSA-AES256-GCM-SHA384
+
+    ECDHE-ECDSA-AES128-SHA256
+
+    ECDHE-RSA-AES128-SHA256
+
+    ECDHE-ECDSA-AES256-SHA384
+
+    ECDHE-RSA-AES256-SHA384
+
+    DHE-RSA-AES128-GCM-SHA256
+
+    DHE-DSS-AES128-GCM-SHA256
+
+    DHE-RSA-AES128-SHA256
+
+    DHE-DSS-AES128-SHA256
+
+    DHE-DSS-AES256-GCM-SHA384
+
+    DHE-RSA-AES256-SHA256
+
+    DHE-DSS-AES256-SHA256
+
+    ECDHE-RSA-AES128-SHA
+
+    ECDHE-ECDSA-AES128-SHA
+
+    ECDHE-RSA-AES256-SHA
+
+    ECDHE-ECDSA-AES256-SHA
+
+    DHE-DSS-AES128-SHA
+
+    DHE-RSA-AES128-SHA
+
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA
+
+    DHE-RSA-AES256-SHA
+
+    AES128-GCM-SHA256
+
+    DH-DSS-AES128-GCM-SHA256
+
+    ECDH-ECDSA-AES128-GCM-SHA256
+
+    AES256-GCM-SHA384
+
+    DH-DSS-AES256-GCM-SHA384
+
+    ECDH-ECDSA-AES256-GCM-SHA384
+
+    AES128-SHA256
+
+    DH-DSS-AES128-SHA256
+
+    ECDH-ECDSA-AES128-SHA256
+
+    AES256-SHA256
+
+    DH-DSS-AES256-SHA256
+
+    ECDH-ECDSA-AES256-SHA384
+
+    AES128-SHA
+
+    DH-DSS-AES128-SHA
+
+    ECDH-ECDSA-AES128-SHA
+
+    AES256-SHA
+
+    DH-DSS-AES256-SHA
+
+    ECDH-ECDSA-AES256-SHA
+
+    DHE-RSA-AES256-GCM-SHA384
+
+    DH-RSA-AES128-GCM-SHA256
+
+    ECDH-RSA-AES128-GCM-SHA256
+
+    DH-RSA-AES256-GCM-SHA384
+
+    ECDH-RSA-AES256-GCM-SHA384
+
+    DH-RSA-AES128-SHA256
+
+    ECDH-RSA-AES128-SHA256
+
+    DH-RSA-AES256-SHA256
+
+    ECDH-RSA-AES256-SHA384
+
+    ECDHE-RSA-AES128-SHA
+
+    ECDHE-ECDSA-AES128-SHA
+
+    ECDHE-RSA-AES256-SHA
+
+    ECDHE-ECDSA-AES256-SHA
+
+    DHE-DSS-AES128-SHA
+
+    DHE-RSA-AES128-SHA
+
+    TLS_DHE_DSS_WITH_AES_256_CBC_SHA
+
+    DHE-RSA-AES256-SHA
+
+    AES128-SHA
+
+    DH-DSS-AES128-SHA
+
+    ECDH-ECDSA-AES128-SHA
+
+    AES256-SHA
+
+    DH-DSS-AES256-SHA
+
+    ECDH-ECDSA-AES256-SHA
+
+    DH-RSA-AES128-SHA
+
+    ECDH-RSA-AES128-SHA
+
+    DH-RSA-AES256-SHA
+
+    ECDH-RSA-AES256-SHA
+
+    DES-CBC3-SHA"
+      reference   : "800-171|3.13.11,800-53|SC-13.,CIS_Recommendation|2.18,CSF|PR.DS-5,ISO/IEC-27001|A.10.1.1,ITSG-33|SC-13,ITSG-33|SC-13a.,LEVEL|2A,NESA|M5.2.6,NESA|T7.4.1,NIAv2|CY3,NIAv2|CY4,NIAv2|CY5b,NIAv2|CY5c,NIAv2|CY5d,NIAv2|CY7,NIAv2|NS5e,QCSC-v1|6.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables WHERE VARIABLE_NAME IN ('tls_ciphersuites');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "tls_ciphersuites", "TLS_AES_256_GCM_SHA384"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "2.2.1 Ensure Binary and Relay Logs are Encrypted"
+      info        : "The binlog_encryption system variable may be used to configure encryption of the binary and relay logs. This may be configured to ON even if binary logging is not enabled in order to encrypt relay log files.
+
+    Rationale:
+
+    The database, and thus the binary and relay logs, may contain sensitive information. Encrypting the binary and relay logs protects all data stored in these logs from internal and external threats."
+      solution    : "To remediate misconfiguration, run this command:
+
+    SET GLOBAL binlog_encryption=ON;
+
+    If you receive the error message below, you need to install keyring. For instructions see Section 6.4.4, 'The MySQL Keyring' in the MySQL documentation.
+
+    ERROR 3794 (HY000): Unable to recover binlog encryption master key, please check if keyring plugin is loaded.
+
+
+
+
+    Default Value:
+
+    The default for binlog_encryption is OFF."
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|2.2.1,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : " SELECT VARIABLE_NAME, VARIABLE_VALUE, 'BINLOG - At Rest Encryption' as Note FROM performance_schema.global_variables where variable_name = 'binlog_encryption';"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "binlog_encryption", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.9 Ensure 'sql_mode' Contains 'STRICT_ALL_TABLES'"
+      info        : "When data changing statements are made (i.e., INSERT, UPDATE), MySQL can handle invalid or missing values differently depending on whether strict SQL mode is enabled. When strict SQL mode is enabled, data may not be truncated or otherwise 'adjusted' to make the data changing statement work.
+
+    Rationale:
+
+    Without strict mode the server tries to proceed with the action when an error might have been a more secure choice. For example, by default MySQL will truncate data if it does not fit in a field, which can lead to unknown behavior, or be leveraged by an attacker to circumvent data validation.
+
+    Impact:
+
+    Applications relying on the MySQL database should be aware that STRICT_ALL_TABLES is in use, such that error conditions are handled appropriately."
+      solution    : "Add STRICT_ALL_TABLES to the sql_mode in the server's configuration file, for example:
+
+    SET GLOBAL sql_mode ='STRICT_ALL_TABLES,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+    Default Value:
+
+    ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+      reference   : "800-171|3.4.6,800-171|3.4.7,800-53|CM-7b.,CIS_Recommendation|4.9,CN-L3|7.1.3.5(c),CN-L3|7.1.3.7(d),CN-L3|8.1.4.4(b),CSF|PR.IP-1,CSF|PR.PT-3,ITSG-33|CM-7a.,LEVEL|2A,NIAv2|SS13b,NIAv2|SS14a,NIAv2|SS14c,QCSC-v1|3.2,SWIFT-CSCv1|2.3"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SHOW VARIABLES LIKE 'sql_mode';"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "sql_mode", regex:".*STRICT_ALL_TABLES.*"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.10 Use MySQL TDE for At-Rest Data Encryption - binlog_encryption"
+      info        : "Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements.
+
+    Rationale:
+
+    File system based encryption does a good job of protecting against data theft on devices unable to limit physical access. It does not, however, protect against users who have or gain access to the operating system, backups, over the network copies, etc. Encrypting data from mysqld adds an additional layer of data protection."
+      solution    : "Edit my.cnf:
+
+    # AUDIT LOG
+    sudo vi /etc/my.cnf
+    [mysqld]
+    audit-log=FORCE_PLUS_PERMANENT
+    audit-log-format=JSON
+    audit-log-encryption=AES
+
+    Execute these commands:
+
+    #### BINLOG
+    >set persist binlog_encryption=ON;
+
+    ##### REDO and UNDO
+    >set persist innodb_redo_log_encrypt=ON;
+    >set persist innodb_undo_log_encrypt=ON;
+
+    # DO NOT USE GENERAL LOG OR SLOW LOGS - USE AUDIT AND PERFORMANCE_SCHEMA.
+    >SET PERSIST general_log = 'OFF';
+
+    Run ALTER to enable encryption (note will lock table as table is encrypted).
+
+    # TABLESPACES, TABLES
+    ALTER TABLESPACE <tablespacename> ENCRYPTION = 'Y';
+    // if innodb file per table (indicated by schemaname/tablename in report)
+    ALTER TABLE <tablename> ENCRYPTION = 'Y';
+    #Encrypt the system tablespace
+    ALTER TABLESPACE mysql ENCRYPTION = 'Y';
+
+    Run MySQL Enterprise Backup with encryption.
+
+    For example:
+
+    $ mysqlbackup --defaults-file=/home/dbadmin/my.cnf --backup-image=/home/admin/backups/my.mbi \
+      --backup-dir=/home/admin/backup-tmp --encrypt-password backup-to-image
+
+
+
+
+    Default Value:
+
+    At rest encryption is off by default.
+
+    Administrators can force tables or tablespaces to be encrypted for all schemas by default by setting in my.cnf.
+
+    default-table-encryption=ON
+
+    or Per schema by defining DEFAULT ENCRYPTION:
+
+    CREATE {DATABASE | SCHEMA} ...
+
+      | DEFAULT ENCRYPTION [=] {'Y' | 'N'}"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|4.10,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE, 'AT REST ENCRYPTION' as Note, IF(VARIABLE_VALUE = 'AES', 'Encrypted', 'Not Encrypted') as IsEncrypted FROM performance_schema.global_variables where variable_name in ('binlog_encryption');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "binlog_encryption", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.10 Use MySQL TDE for At-Rest Data Encryption - innodb_redo_log_encrypt"
+      info        : "Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements.
+
+    Rationale:
+
+    File system based encryption does a good job of protecting against data theft on devices unable to limit physical access. It does not, however, protect against users who have or gain access to the operating system, backups, over the network copies, etc. Encrypting data from mysqld adds an additional layer of data protection."
+      solution    : "Edit my.cnf:
+
+    # AUDIT LOG
+    sudo vi /etc/my.cnf
+    [mysqld]
+    audit-log=FORCE_PLUS_PERMANENT
+    audit-log-format=JSON
+    audit-log-encryption=AES
+
+    Execute these commands:
+
+    #### BINLOG
+    >set persist binlog_encryption=ON;
+
+    ##### REDO and UNDO
+    >set persist innodb_redo_log_encrypt=ON;
+    >set persist innodb_undo_log_encrypt=ON;
+
+    # DO NOT USE GENERAL LOG OR SLOW LOGS - USE AUDIT AND PERFORMANCE_SCHEMA.
+    >SET PERSIST general_log = 'OFF';
+
+    Run ALTER to enable encryption (note will lock table as table is encrypted).
+
+    # TABLESPACES, TABLES
+    ALTER TABLESPACE <tablespacename> ENCRYPTION = 'Y';
+    // if innodb file per table (indicated by schemaname/tablename in report)
+    ALTER TABLE <tablename> ENCRYPTION = 'Y';
+    #Encrypt the system tablespace
+    ALTER TABLESPACE mysql ENCRYPTION = 'Y';
+
+    Run MySQL Enterprise Backup with encryption.
+
+    For example:
+
+    $ mysqlbackup --defaults-file=/home/dbadmin/my.cnf --backup-image=/home/admin/backups/my.mbi \
+      --backup-dir=/home/admin/backup-tmp --encrypt-password backup-to-image
+
+
+
+
+    Default Value:
+
+    At rest encryption is off by default.
+
+    Administrators can force tables or tablespaces to be encrypted for all schemas by default by setting in my.cnf.
+
+    default-table-encryption=ON
+
+    or Per schema by defining DEFAULT ENCRYPTION:
+
+    CREATE {DATABASE | SCHEMA} ...
+
+      | DEFAULT ENCRYPTION [=] {'Y' | 'N'}"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|4.10,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE, 'AT REST ENCRYPTION' as Note, IF(VARIABLE_VALUE = 'AES', 'Encrypted', 'Not Encrypted') as IsEncrypted FROM performance_schema.global_variables where variable_name in ('innodb_redo_log_encrypt');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "innodb_redo_log_encrypt", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.10 Use MySQL TDE for At-Rest Data Encryption - innodb_undo_log_encrypt"
+      info        : "Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements.
+
+    Rationale:
+
+    File system based encryption does a good job of protecting against data theft on devices unable to limit physical access. It does not, however, protect against users who have or gain access to the operating system, backups, over the network copies, etc. Encrypting data from mysqld adds an additional layer of data protection."
+      solution    : "Edit my.cnf:
+
+    # AUDIT LOG
+    sudo vi /etc/my.cnf
+    [mysqld]
+    audit-log=FORCE_PLUS_PERMANENT
+    audit-log-format=JSON
+    audit-log-encryption=AES
+
+    Execute these commands:
+
+    #### BINLOG
+    >set persist binlog_encryption=ON;
+
+    ##### REDO and UNDO
+    >set persist innodb_redo_log_encrypt=ON;
+    >set persist innodb_undo_log_encrypt=ON;
+
+    # DO NOT USE GENERAL LOG OR SLOW LOGS - USE AUDIT AND PERFORMANCE_SCHEMA.
+    >SET PERSIST general_log = 'OFF';
+
+    Run ALTER to enable encryption (note will lock table as table is encrypted).
+
+    # TABLESPACES, TABLES
+    ALTER TABLESPACE <tablespacename> ENCRYPTION = 'Y';
+    // if innodb file per table (indicated by schemaname/tablename in report)
+    ALTER TABLE <tablename> ENCRYPTION = 'Y';
+    #Encrypt the system tablespace
+    ALTER TABLESPACE mysql ENCRYPTION = 'Y';
+
+    Run MySQL Enterprise Backup with encryption.
+
+    For example:
+
+    $ mysqlbackup --defaults-file=/home/dbadmin/my.cnf --backup-image=/home/admin/backups/my.mbi \
+      --backup-dir=/home/admin/backup-tmp --encrypt-password backup-to-image
+
+
+
+
+    Default Value:
+
+    At rest encryption is off by default.
+
+    Administrators can force tables or tablespaces to be encrypted for all schemas by default by setting in my.cnf.
+
+    default-table-encryption=ON
+
+    or Per schema by defining DEFAULT ENCRYPTION:
+
+    CREATE {DATABASE | SCHEMA} ...
+
+      | DEFAULT ENCRYPTION [=] {'Y' | 'N'}"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|4.10,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE, 'AT REST ENCRYPTION' as Note, IF(VARIABLE_VALUE = 'AES', 'Encrypted', 'Not Encrypted') as IsEncrypted FROM performance_schema.global_variables where variable_name in ('innodb_undo_log_encrypt');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "innodb_undo_log_encrypt", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.10 Use MySQL TDE for At-Rest Data Encryption - table_encryption_privilege_check"
+      info        : "Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements.
+
+    Rationale:
+
+    File system based encryption does a good job of protecting against data theft on devices unable to limit physical access. It does not, however, protect against users who have or gain access to the operating system, backups, over the network copies, etc. Encrypting data from mysqld adds an additional layer of data protection."
+      solution    : "Edit my.cnf:
+
+    # AUDIT LOG
+    sudo vi /etc/my.cnf
+    [mysqld]
+    audit-log=FORCE_PLUS_PERMANENT
+    audit-log-format=JSON
+    audit-log-encryption=AES
+
+    Execute these commands:
+
+    #### BINLOG
+    >set persist binlog_encryption=ON;
+
+    ##### REDO and UNDO
+    >set persist innodb_redo_log_encrypt=ON;
+    >set persist innodb_undo_log_encrypt=ON;
+
+    # DO NOT USE GENERAL LOG OR SLOW LOGS - USE AUDIT AND PERFORMANCE_SCHEMA.
+    >SET PERSIST general_log = 'OFF';
+
+    Run ALTER to enable encryption (note will lock table as table is encrypted).
+
+    # TABLESPACES, TABLES
+    ALTER TABLESPACE <tablespacename> ENCRYPTION = 'Y';
+    // if innodb file per table (indicated by schemaname/tablename in report)
+    ALTER TABLE <tablename> ENCRYPTION = 'Y';
+    #Encrypt the system tablespace
+    ALTER TABLESPACE mysql ENCRYPTION = 'Y';
+
+    Run MySQL Enterprise Backup with encryption.
+
+    For example:
+
+    $ mysqlbackup --defaults-file=/home/dbadmin/my.cnf --backup-image=/home/admin/backups/my.mbi \
+      --backup-dir=/home/admin/backup-tmp --encrypt-password backup-to-image
+
+
+
+
+    Default Value:
+
+    At rest encryption is off by default.
+
+    Administrators can force tables or tablespaces to be encrypted for all schemas by default by setting in my.cnf.
+
+    default-table-encryption=ON
+
+    or Per schema by defining DEFAULT ENCRYPTION:
+
+    CREATE {DATABASE | SCHEMA} ...
+
+      | DEFAULT ENCRYPTION [=] {'Y' | 'N'}"
+      reference   : "800-171|3.1.13,800-53|AC-17(2),CIS_Recommendation|4.10,CN-L3|7.1.2.7(g),CN-L3|7.1.3.1(d),CN-L3|8.1.4.1(c),CSF|PR.AC-3,CSF|PR.PT-4,ISO/IEC-27001|A.6.2.2,ITSG-33|AC-17(2),LEVEL|2A,NESA|T5.4.2,NIAv2|AM37,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,SWIFT-CSCv1|2.6"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE, 'AT REST ENCRYPTION' as Note, IF(VARIABLE_VALUE = 'AES', 'Encrypted', 'Not Encrypted') as IsEncrypted FROM performance_schema.global_variables where variable_name in ('table_encryption_privilege_check');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "table_encryption_privilege_check", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "4.10 Use MySQL TDE for At-Rest Data Encryption - audit_log_encryption"
+      info        : "Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements.
+
+    Rationale:
+
+    File system based encryption does a good job of protecting against data theft on devices unable to limit physical access. It does not, however, protect against users who have or gain access to the operating system, backups, over the network copies, etc. Encrypting data from mysqld adds an additional layer of data protection."
+      solution    : "Edit my.cnf:
+
+    # AUDIT LOG
+    sudo vi /etc/my.cnf
+    [mysqld]
+    audit-log=FORCE_PLUS_PERMANENT
+    audit-log-format=JSON
+    audit-log-encryption=AES
+
+    Execute these commands:
+
+    #### BINLOG
+    >set persist binlog_encryption=ON;
+
+    ##### REDO and UNDO
+    >set persist innodb_redo_log_encrypt=ON;
+    >set persist innodb_undo_log_encrypt=ON;
+
+    # DO NOT USE GENERAL LOG OR SLOW LOGS - USE AUDIT AND PERFORMANCE_SCHEMA.
+    >SET PERSIST general_log = 'OFF';
+
+    Run ALTER to enable encryption (note will lock table as table is encrypted).
+
+    # TABLESPACES, TABLES
+    ALTER TABLESPACE <tablespacename> ENCRYPTION = 'Y';
+    // if innodb file per table (indicated by schemaname/tablename in report)
+    ALTER TABLE <tablename> ENCRYPTION = 'Y';
+    #Encrypt the system tablespace
+    ALTER TABLESPACE mysql ENCRYPTION = 'Y';
+
+    Run MySQL Enterprise Backup with encryption.
+
+    For example:
+
+    $ mysqlbackup --defaults-file=/home/dbadmin/my.cnf --backup-image=/home/admin/backups/my.mbi \
+      --backup-dir=/home/admin/backup-tmp --encrypt-password backup-to-image
+
+
+
+
+    Default Value:
+
+    At rest encryption is off by default.
+
+    Administrators can force tables or tablespaces to be encrypted for all schemas by default by setting in my.cnf.
+
+    default-table-encryption=ON
+
+    or Per schema by defining DEFAULT ENCRYPTION:
+
+    CREATE {DATABASE | SCHEMA} ...
+
+      | DEFAULT ENCRYPTION [=] {'Y' | 'N'}"
+      reference   : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CIS_Recommendation|4.10,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT VARIABLE_NAME, VARIABLE_VALUE, 'AT REST ENCRYPTION' as Note, IF(VARIABLE_VALUE = 'AES', 'Encrypted', 'Not Encrypted') as IsEncrypted FROM performance_schema.global_variables where variable_name in ('audit_log_encryption');"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "audit_log_encryption", "ON"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "5.3 Ensure 'process_priv' is Not Set to 'Y' for Non-Administrative Users - Y for Non-Administrative Users"
+      info        : "The PROCESS privilege found in the mysql.user table determines whether a given user can see statement execution information for all sessions.
+
+Rationale:
+
+The PROCESS privilege allows principals to view currently executing MySQL statements beyond their own, including statements used to manage passwords. This may be leveraged by an attacker to compromise MySQL or to gain access to potentially sensitive data.
+
+Impact:
+
+Users denied the PROCESS privilege may also be denied use of SHOW ENGINE."
+      solution    : "Perform the following steps to remediate this setting:
+
+Enumerate the non-administrative users found in the result set of the audit procedure
+
+For each user, issue the following SQL statement (replace <user> with the non-administrative user:
+
+REVOKE PROCESS ON *.* FROM '<user>';"
+      reference   : "800-171|3.1.5,800-53|AC-6(5),CIS_Recommendation|5.3,CN-L3|8.1.10.6(a),CSCv6|5.1,CSF|PR.AC-4,ISO/IEC-27001|A.9.2.3,ITSG-33|AC-6(5),LEVEL|2M,NESA|T5.1.1,NESA|T5.2.2,NESA|T5.6.1,NIAv2|AM32,NIAv2|AM33,NIAv2|VL3a,QCSC-v1|5.2.2,QCSC-v1|6.2,SWIFT-CSCv1|1.2,TBA-FIISB|31.4.2,TBA-FIISB|31.4.3"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "select user, host from mysql.user where Process_priv = 'Y' ;"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "root", regex:".+"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "6.3 Ensure 'log_error_verbosity' is Set to '2'"
+      info        : "The log_error_verbosity system variable, set to 2 by default, specifies the verbosity of events sent to the MySQL error log. A value of 2 enables logging of error and warning messages, a value of 3 also includes informational logging, a value of 1 logs only errors.
+
+    Rationale:
+
+    This might help to detect malicious behavior by logging communication errors and aborted connections."
+      solution    : "Perform the following actions to remediate this setting:
+
+    Open the MySQL configuration file (my.cnf)
+
+    Ensure the following line is found in the mysqld section
+
+    log_error_verbosity = 2
+
+    Default Value:
+
+    The option is enabled (2) - errors and warning events are logged - by default."
+      reference   : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CIS_Recommendation|6.3,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SHOW GLOBAL VARIABLES LIKE 'log_error_verbosity';"
+      sql_types   : POLICY_VARCHAR, POLICY_INTEGER
+      sql_expect  : "log_error_verbosity", "2"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "6.6 Ensure ALL Events are Audited"
+      info        : "This filter defines all events to be written to the audit log.
+
+    Rationale:
+
+    This filter to log all, and binding to all, users must be set to ensure all event information is written to the audit log.
+
+    Impact:
+
+    Logging all events can result in very large audit files. In the case where the database is extremely active it may be more appropriate to be more selective when defining audit filters."
+      solution    : "Create Log All Filter:
+
+    SELECT audit_log_filter_set_filter('log_all', '{ 'filter': { 'log': true } }');
+
+    Apply to all logins:
+
+    SELECT audit_log_filter_set_user('%', 'log_all');"
+      reference   : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.6,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SELECT * FROM mysql.audit_log_filter;"
+      sql_types   : POLICY_VARCHAR
+      sql_expect  : regex:".*"
+    </custom_item>
+
+    <custom_item>
+      type        : SQL_POLICY
+      description : "6.7 Set audit_log_strategy to SYNCHRONOUS or SEMISYNCRONOUS"
+      info        : "The audit_log_strategy must be set to SYNCHRONOUS or SEMISYNCHRONOUS
+
+    Rationale:
+
+    This setting controls how information is written to the audit log. It can be set to SYNCHRONOUS to make it fully durable or other settings which are less durable but have less performance overhead.
+
+    Impact:
+
+    If this setting is set to PERFORMANCE or ASYNCHRONOUS audit events might be lost in case of a crash or when the server somehow can't write to the audit log file."
+      solution    : "To remediate this configuration:
+
+    Open the MySQL configuration file (my.cnf)
+
+    Navigate to the mysqld section of the configuration file
+
+    Set audit_log_strategy='SEMISYNCHRONOUS' (or SYNCHRONOUS)
+
+    Default Value:
+
+    ASYNCHRONOUS"
+      reference   : "800-171|3.3.8,800-53|AU-9.,CIS_Recommendation|6.7,CN-L3|7.1.2.3(d),CN-L3|7.1.3.3(f),CN-L3|8.1.3.5(c),CN-L3|8.1.4.3(c),CSF|PR.PT-1,ISO/IEC-27001|A.12.4.2,ITSG-33|AU-9,LEVEL|2A,NESA|M5.2.3,NESA|M5.5.2,NESA|T3.6.4,NESA|T8.2.9,NIAv2|SM5,NIAv2|SM6,QCSC-v1|8.2.1,QCSC-v1|13.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      sql_request : "SHOW GLOBAL VARIABLES LIKE 'audit_log_strategy';"
+      sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+      sql_expect  : "audit_log_strategy", regex:"^(SYNCHRONOUS|SEMISYNCHRONOUS)"
+    </custom_item>
+
+    <if>
+      <condition type:"AND">
+        <custom_item>
+          type         : SQL_POLICY
+          description  : "MySQL 8.0 is installed"
+          sql_request  : "show variables like 'version' ;"
+          sql_types    : POLICY_VARCHAR, POLICY_VARCHAR
+          sql_expect   : "version", regex:"8\.0\.(2[2-9]|[3-9][0-9])"
+          check_option : CAN_NOT_BE_NULL
+        </custom_item>
+      </condition>
+
+      <then>
+        <custom_item>
+          type        : SQL_POLICY
+          description : "9.3 Ensure 'source_info_repository' is Set to 'TABLE'"
+          info        : "The source_info_repository (master_info_repository is deprecated as of 8.0.22) setting determines to where a REPLICA (slave is deprecated as of 8.0.22) logs SOURCE status and connection information. The options are FILE or TABLE. Note also that this setting is associated with the sync_source_info (sync_master_info is deprecated in 8.0.22) setting as well.
+
+    Rationale:
+
+    The password which the client uses is stored in the SOURCE info repository, which by default is a plaintext file. The TABLE SOURCE info repository is a bit safer, but with filesystem access it's still possible to gain access to the password the REPLICA is using."
+          solution    : "Perform the following actions to remediate this setting:
+
+    Open the MySQL configuration file (my.cnf)
+
+    Locate source_info_repository (master_info_repository)
+
+    Set the source_info_repository (master_info_repository) value to TABLE
+
+    Note: If source_info_repository (master_info_repository) does not exist, add it to the configuration file.
+
+    Default Value:
+
+    TABLE"
+          reference   : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|9.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          sql_request : "SHOW GLOBAL VARIABLES LIKE 'source_info_repository';"
+          sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+          sql_expect  : "source_info_repository", "TABLE"
+        </custom_item>
+      </then>
+
+      <else>
+        <custom_item>
+          type        : SQL_POLICY
+          description : "9.3 Ensure 'source_info_repository' is Set to 'TABLE'"
+          info        : "The source_info_repository (master_info_repository is deprecated as of 8.0.22) setting determines to where a REPLICA (slave is deprecated as of 8.0.22) logs SOURCE status and connection information. The options are FILE or TABLE. Note also that this setting is associated with the sync_source_info (sync_master_info is deprecated in 8.0.22) setting as well.
+
+    Rationale:
+
+    The password which the client uses is stored in the SOURCE info repository, which by default is a plaintext file. The TABLE SOURCE info repository is a bit safer, but with filesystem access it's still possible to gain access to the password the REPLICA is using."
+          solution    : "Perform the following actions to remediate this setting:
+
+    Open the MySQL configuration file (my.cnf)
+
+    Locate source_info_repository (master_info_repository)
+
+    Set the source_info_repository (master_info_repository) value to TABLE
+
+    Note: If source_info_repository (master_info_repository) does not exist, add it to the configuration file.
+
+    Default Value:
+
+    TABLE"
+          reference   : "800-171|3.4.2,800-53|CM-6b.,CIS_Recommendation|9.3,CN-L3|8.1.10.6(d),CSCv6|3.1,CSF|PR.IP-1,ITSG-33|CM-6b.,LEVEL|2A,NESA|T3.2.1,PCI-DSSv3.1|2.2.4,PCI-DSSv3.2|2.2.4,SWIFT-CSCv1|2.3"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          sql_request : "SHOW GLOBAL VARIABLES LIKE 'master_info_repository';"
+          sql_types   : POLICY_VARCHAR, POLICY_VARCHAR
+          sql_expect  : "master_info_repository", "TABLE"
+        </custom_item>
+      </else>
+    </if>
+
+    <if>
+      <condition type:"AND">
+        <custom_item>
+          type         : SQL_POLICY
+          description  : "MySQL 8.0 is installed"
+          sql_request  : "show variables like 'version' ;"
+          sql_types    : POLICY_VARCHAR, POLICY_VARCHAR
+          sql_expect   : "version", regex:"8\.0\.(2[2-9]|[3-9][0-9])"
+          check_option : CAN_NOT_BE_NULL
+        </custom_item>
+      </condition>
+
+      <then>
+        <custom_item>
+          type        : SQL_POLICY
+          description : "10.2 Allowlist Approved Servers Belonging to a MySQL InnoDB Cluster"
+          info        : "Optionally, specify an allowlist of approved servers that belong to the MySQL InnoDB Cluster.
+
+    Rationale:
+
+    When using MySQL InnoDB Cluster by specifying the allowlist explicitly, you can increase the security of your cluster as only servers in the allowlist are allowed to connect to the cluster.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+          solution    : "Example - to configure a cluster to only accept connections from servers at addresses 203.0.113.0/24 and 198.51.100.110. The whitelist can also include host names, which are resolved only when a connection request is made by another server.
+
+
+
+
+    From 8.0.22:
+
+    mysql-js> cluster.addInstance('icadmin@ic-3:3306', {ipAllowlist: '203.0.113.0/24, 198.51.100.110'})
+
+    Prior to 8.0.22:
+
+    mysql-js> cluster.addInstance('icadmin@ic-3:3306', {ipWhitelist: '203.0.113.0/24, 198.51.100.110'})"
+          reference   : "800-53|CA-3(5),CIS_Recommendation|10.2,CSF|DE.AE-1,CSF|ID.AM-3,ITSG-33|CA-3,LEVEL|2M,NESA|M1.3.5,NESA|M1.3.7,NESA|T5.4.2,QCSC-v1|4.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|6.2,SWIFT-CSCv1|2.5"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          sql_request : "select @@group_replication_ip_allowlist"
+          sql_types   : POLICY_VARCHAR
+          sql_expect  : "ManualReviewRequired"
+          severity    : MEDIUM
+        </custom_item>
+      </then>
+
+      <else>
+        <custom_item>
+          type        : SQL_POLICY
+          description : "10.2 Allowlist Approved Servers Belonging to a MySQL InnoDB Cluster"
+          info        : "Optionally, specify an allowlist of approved servers that belong to the MySQL InnoDB Cluster.
+
+    Rationale:
+
+    When using MySQL InnoDB Cluster by specifying the allowlist explicitly, you can increase the security of your cluster as only servers in the allowlist are allowed to connect to the cluster.
+
+    NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+          solution    : "Example - to configure a cluster to only accept connections from servers at addresses 203.0.113.0/24 and 198.51.100.110. The whitelist can also include host names, which are resolved only when a connection request is made by another server.
+
+
+
+
+    From 8.0.22:
+
+    mysql-js> cluster.addInstance('icadmin@ic-3:3306', {ipAllowlist: '203.0.113.0/24, 198.51.100.110'})
+
+    Prior to 8.0.22:
+
+    mysql-js> cluster.addInstance('icadmin@ic-3:3306', {ipWhitelist: '203.0.113.0/24, 198.51.100.110'})"
+          reference   : "800-53|CA-3(5),CIS_Recommendation|10.2,CSF|DE.AE-1,CSF|ID.AM-3,ITSG-33|CA-3,LEVEL|2M,NESA|M1.3.5,NESA|M1.3.7,NESA|T5.4.2,QCSC-v1|4.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|6.2,SWIFT-CSCv1|2.5"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          sql_request : "select @@group_replication_ip_whitelist;"
+          sql_types   : POLICY_VARCHAR
+          sql_expect  : "ManualReviewRequired"
+          severity    : MEDIUM
+        </custom_item>
+      </else>
+    </if>
+  </then>
+
+  <else>
+    <report type:"WARNING">
+      description : "CIS_MySQL_8.0_Enterprise_Benchmark_v1.0.0_Level_2_DB.audit from CIS Oracle MySQL 8.0 Enterprise Edition v1.0.0"
+      info        : "NOTE: Nessus has not identified that the chosen audit applies to the target device.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+    </report>
+  </else>
+</if>
+
+</group_policy>
+</check_type>

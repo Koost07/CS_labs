@@ -1,0 +1,903 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/08/05 $
+#
+# Description : This document implements the security configuration as recommended by the
+#               CIS Google Kubernetes Engine (GKE) Benchmark
+#
+#<ui_metadata>
+#<display_name>CIS Google Kubernetes Engine (GKE) v1.1.0 L2 Master</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>Google Kubernetes Engine (GKE) v1.1.0 L2 Master</name>
+#  <version>1.1.0</version>
+#  <link>https://workbench.cisecurity.org/files/2764</link>
+#</spec>
+#<labels>gke,kubernetes</labels>
+#<benchmark_refs>LEVEL,CSCv6,CSCv7,CIS_Recommendation</benchmark_refs>
+#</ui_metadata>
+
+<check_type:"GCP">
+
+<report type:"WARNING">
+  description : "2.2.2 Ensure that the audit policy covers key security concerns"
+  info        : "Ensure that the audit policy created for the cluster covers key security concerns.
+
+Rationale:
+
+Security audit logs should cover access and modification of key resources in the cluster, to enable them to form an effective part of a security environment.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "This control cannot be modified in GKE.
+
+Impact:
+
+Increasing audit logging will consume resources on the nodes or other log destination.
+
+Default Value:
+
+See the GKE documentation for the default value."
+  reference   : "800-53|AU-3.,CIS_Recommendation|2.2.2,CSCv6|14.6,CSCv7|14.9,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.6 Minimize the admission of root containers"
+  info           : "Do not generally permit containers to be run as the root user.
+
+Rationale:
+
+Containers may run as any Linux user. Containers which run as the root user, whilst constrained by Container Runtime security features still have a escalated likelihood of container breakout.
+
+Ideally, all containers should run as a defined non-UID 0 user.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit root users in a container.
+
+If you need to run root containers, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.runAsUser.rule is set to either MustRunAsNonRoot or MustRunAs with the range of UIDs not including 0.
+
+Impact:
+
+Pods with containers which run as the root user will not be permitted.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.6,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|2S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"runAsUser\": .spec.runAsUser})] as $policies | [(.value.items[] | select((.spec.runAsUser.rule == \"MustRunAsNonRoot\") or ((.spec.runAsUser.rule == \"MustRunAs\") and (.spec.runAsUser.ranges[].min > 0))) | {\"policy\": .metadata.name, \"runAsUser\": .spec.runAsUser})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "policies"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "4.2.9 Minimize the admission of containers with capabilities assigned"
+  info        : "Do not generally permit containers with capabilities
+
+Rationale:
+
+Containers run with a default set of capabilities as assigned by the Container Runtime. Capabilities are parts of the rights generally granted on a Linux system to the root user.
+
+In many cases applications running in containers do not require any capabilities to operate, so from the perspective of the principal of least privilege use of capabilities should be minimized.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Review the use of capabilites in applications runnning on your cluster. Where a namespace contains applicaions which do not require any Linux capabities to operate consider adding a PSP which forbids the admission of containers which do not drop all capabilities.
+
+Impact:
+
+Pods with containers require capabilities to operate will not be permitted.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.2.9,CSCv6|5.1,CSCv7|5.2,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.3.2 Ensure that all Namespaces have Network Policies defined"
+  info        : "Use network policies to isolate traffic in your cluster network.
+
+Rationale:
+
+Running different applications on the same Kubernetes cluster creates a risk of one compromised application attacking a neighboring application. Network segmentation is important to ensure that containers can communicate only with those they are supposed to. A network policy is a specification of how selections of pods are allowed to communicate with each other and other network endpoints.
+
+Network Policies are namespace scoped. When a network policy is introduced to a given namespace, all traffic not allowed by the policy is denied. However, if there are no network policies in a namespace all traffic will be allowed into and out of the pods in that namespace.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the documentation and create NetworkPolicy objects as you need them.
+
+Impact:
+
+Once network policies are in use within a given namespace, traffic not explicitly allowed by a network policy will be denied. As such it is important to ensure that, when introducing network policies, legitimate traffic is not blocked.
+
+Default Value:
+
+By default, network policies are not created."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.3.2,CSCv6|14.1,CSCv7|14.1,CSCv7|14.2,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.4.1 Prefer using secrets as files over secrets as environment variables"
+  info        : "Kubernetes supports mounting secrets as data volumes or as environment variables. Minimize the use of environment variable secrets.
+
+Rationale:
+
+It is reasonably common for application code to log out its environment (particularly in the event of an error). This will include any secret values passed in as environment variables, so secrets can easily be exposed to any user or entity who has access to the logs.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "If possible, rewrite application code to read secrets from mounted secret files, rather than from environment variables.
+
+Impact:
+
+Application code which expects to read secrets in the form of environment variables would need modification
+
+Default Value:
+
+By default, secrets are not defined"
+  reference   : "800-53|CM-6b.,CIS_Recommendation|4.4.1,CSCv7|14.4,CSCv7|14.8,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.4.2 Consider external secret storage"
+  info        : "Consider the use of an external secrets storage and management system, instead of using Kubernetes Secrets directly, if you have more complex secret management needs. Ensure the solution requires authentication to access secrets, has auditing of access to and use of secrets, and encrypts secrets. Some solutions also make it easier to rotate secrets.
+
+Rationale:
+
+Kubernetes supports secrets as first-class objects, but care needs to be taken to ensure that access to secrets is carefully limited. Using an external secrets provider can ease the management of access to secrets, especially where secrests are used across both Kubernetes and non-Kubernetes environments.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Refer to the secrets management options offered by your cloud provider or a third-party secrets management solution.
+
+Impact:
+
+None
+
+Default Value:
+
+By default, no external secret management is configured."
+  reference   : "800-53|CM-6b.,CIS_Recommendation|4.4.2,CSCv7|14.8,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.5.1 Configure Image Provenance using ImagePolicyWebhook admission controller"
+  info        : "Configure Image Provenance for your deployment.
+
+Rationale:
+
+Kubernetes supports plugging in provenance rules to accept or reject the images in your deployments. You could configure such rules to ensure that only approved images are deployed in the cluster.
+
+See also Recommendation 6.10.5 for GKE specifically.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the Kubernetes documentation and setup image provenance.
+See also Recommendation 6.10.5 for GKE specifically.
+
+Impact:
+
+You need to regularly maintain your provenance configuration based on container image updates.
+
+Default Value:
+
+By default, image provenance is not set."
+  reference   : "800-53|CM-6b.,CIS_Recommendation|4.5.1,CSCv6|18,CSCv7|18,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.6.2 Ensure that the seccomp profile is set to docker/default in your pod definitions"
+  info        : "Enable docker/default seccomp profile in your pod definitions.
+
+Rationale:
+
+Seccomp (secure computing mode) is used to restrict the set of system calls applications can make, allowing cluster administrators greater control over the security of workloads running in the cluster. Kubernetes disables seccomp profiles by default for historical reasons. You should enable it to ensure that the workloads have restricted actions available within the container.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Seccomp is an alpha feature currently. By default, all alpha features are disabled. So, you would need to enable alpha features in the apiserver by passing '--feature-gates=AllAlpha=true' argument.
+Edit the /etc/kubernetes/apiserver file on the master node and set the KUBE_API_ARGS parameter to '--feature-gates=AllAlpha=true'
+
+KUBE_API_ARGS='--feature-gates=AllAlpha=true'
+
+Based on your system, restart the kube-apiserver service. For example:
+
+systemctl restart kube-apiserver.service
+
+Use annotations to enable the docker/default seccomp profile in your pod definitions. An example is as below:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: trustworthy-pod
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: docker/default
+spec:
+  containers:
+    - name: trustworthy-container
+      image: sotrustworthy:latest
+
+Impact:
+
+If the docker/default seccomp profile is too restrictive for you, you would have to create/manage your own seccomp profiles. Also, you need to enable all alpha features for this to work. There is no individual switch to turn on this feature.
+
+Default Value:
+
+By default, seccomp profile is set to unconfined which means that no seccomp profiles are enabled."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.6.2,CSCv6|5,CSCv7|5.2,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.6.3 Apply Security Context to Your Pods and Containers"
+  info        : "Apply Security Context to Your Pods and Containers
+
+Rationale:
+
+A security context defines the operating system security settings (uid, gid, capabilities, SELinux role, etc..) applied to a container. When designing your containers and pods, make sure that you configure the security context for your pods, containers, and volumes. A security context is a property defined in the deployment yaml. It controls the security parameters that will be assigned to the pod/container/volume. There are two levels of security context: pod level security context, and container level security context.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the Kubernetes documentation and apply security contexts to your pods. For a suggested list of security contexts, you may refer to the CIS Security Benchmark for Docker Containers.
+
+Impact:
+
+If you incorrectly apply security contexts, you may have trouble running the pods.
+
+Default Value:
+
+By default, no security contexts are automatically applied to pods."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.6.3,CSCv6|3,CSCv7|5,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.6.4 The default namespace should not be used"
+  info        : "Kubernetes provides a default namespace, where objects are placed if no namespace is specified for them. Placing objects in this namespace makes application of RBAC and other controls more difficult.
+
+Rationale:
+
+Resources in a Kubernetes cluster should be segregated by namespace, to allow for security controls to be applied at that level and to make it easier to manage resources.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Ensure that namespaces are created to allow for appropriate segregation of Kubernetes resources and that all new resources are created in a specific namespace.
+
+Impact:
+
+None
+
+Default Value:
+
+Unless a namespace is specific on object creation, the default namespace will be used"
+  reference   : "800-53|CM-6b.,CIS_Recommendation|4.6.4,CSCv7|5.1,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.1.4 Minimize Container Registries to only those approved"
+  info        : "Use Binary Authorization to allowlist (whitelist) only approved container registries.
+
+Rationale:
+
+Allowing unrestricted access to external container registries provides the opportunity for malicious or unapproved containers to be deployed into the cluster. Allowlisting only approved container registries reduces this risk.
+
+See also Recommendation 6.10.5.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+Go to Binary Authorization by visiting https://console.cloud.google.com/security/binary-authorization
+
+Enable Binary Authorization API (if disabled)
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes cluster for which Binary Authorization is disabled
+
+Click EDIT
+
+Set Binary Authorization to 'Enabled'
+
+Click SAVE
+
+Return to the Binary Authorization by visiting https://console.cloud.google.com/security/binary-authorization
+
+Set an appropriate policy for your cluster and enter the approved container registries under 'Image paths'.
+
+Using Command Line
+
+Update the cluster to enable Binary Authorization
+
+gcloud container cluster update [CLUSTER_NAME] \
+  --enable-binauthz
+
+Create a Binary Authorization Policy using the Binary Authorization Policy Reference (https://cloud.google.com/binary-authorization/docs/policy-yaml-reference) for guidance.
+Import the policy file into Binary Authorization:
+
+gcloud container binauthz policy import [YAML_POLICY]
+
+Impact:
+
+All container images to be deployed to the cluster must be hosted within an approved container image registry. If public registries are not on the allowlist, a process for bringing commonly used container images into an approved private registry and keeping them up to date will be required.
+
+Default Value:
+
+By default, Binary Authorization is disabled along with container registry allowlisting."
+  reference   : "800-53|CM-7(5),CIS_Recommendation|5.1.4,CSCv7|5.2,CSCv7|5.3,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.4.2 Ensure the GKE Metadata Server is Enabled"
+  info           : "Running the GKE Metadata Server prevents workloads from accessing sensitive instance metadata and facilitates Workload Identity
+
+Rationale:
+
+Every node stores its metadata on a metadata server. Some of this metadata, such as kubelet credentials and the VM instance identity token, is sensitive and should not be exposed to a Kubernetes workload. Enabling the GKE Metadata server prevents pods (that are not running on the host network) from accessing this metadata and facilitates Workload Identity.
+
+When unspecified, the default setting allows running pods to have full access to the node's underlying metadata server."
+  solution       : "The GKE Metadata Server requires Workload Identity to be enabled on a cluster. Modify the cluster to enable Workload Identity and enable the GKE Metadata Server.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+From the list of clusters, select the cluster for which Workload Identity is disabled.
+
+Click on EDIT
+
+Set Workload Identity to 'Enabled' and set the Workload Identity Namespace to the namespace of the Cloud project containing the cluster, e.g: [PROJECT_ID].svc.id.goog
+
+Click SAVE and wait for the cluster to update
+
+Once the cluster has updated, select each Node pool within the cluster Details page
+
+For each Node pool, select EDIT within the Node pool details page
+
+Within the Edit node pool pane, check the 'Enable GKE Metadata Server checkbox'
+
+Click SAVE.
+
+Using Command Line
+
+gcloud beta container clusters update [CLUSTER_NAME] \
+  --identity-namespace=[PROJECT_ID].svc.id.goog
+
+Note that existing Node pools are unaffected. New Node pools default to --workload-metadata-from-node=GKE_METADATA_SERVER.
+To modify an existing Node pool to enable GKE Metadata Server:
+
+gcloud beta container node-pools update [NODEPOOL_NAME] \
+  --cluster=[CLUSTER_NAME] \
+  --workload-metadata-from-node=GKE_METADATA_SERVER
+
+You may also need to modify workloads in order for them to use Workload Identity as described within https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity.
+
+Impact:
+
+The GKE Metadata Server must be run when using Workload Identity. Because Workload Identity replaces the need to use Metadata Concealment, the two approaches are incompatible.
+
+When the GKE Metadata Server and Workload Identity are enabled, unless the Pod is running on the host network, Pods cannot use the the Compute Engine default service account.
+
+You may also need to modify workloads in order for them to use Workoad Identity as described within https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity.
+
+Default Value:
+
+By default, running pods to have full access to the node's underlying metadata server."
+  reference      : "800-171|3.1.5,800-53|AC-6.,CIS_Recommendation|5.4.2,CN-L3|7.1.3.2(b),CN-L3|7.1.3.2(g),CN-L3|8.1.4.2(d),CN-L3|8.1.10.6(a),CSCv7|4.3,CSF|PR.AC-4,CSF|PR.DS-5,ITSG-33|AC-6,LEVEL|2S,NESA|T5.1.1,NESA|T5.2.2,NESA|T5.4.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.3,NIAv2|AM1,NIAv2|AM23f,NIAv2|SS13c,NIAv2|SS15c,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|13.2,SWIFT-CSCv1|5.1,TBA-FIISB|31.4.2,TBA-FIISB|31.4.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Workload Metadata Config - Node Metadata: \(.config.workloadMetadataConfig.mode)\""
+  regex          : "Workload Metadata Config - Node Metadata"
+  expect         : "Workload Metadata Config - Node Metadata: GKE_METADATA"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.1 Ensure Container-Optimized OS (COS) is used for GKE node images"
+  info           : "Use Container-Optimized OS (COS) as a managed, optimized and hardened base OS that limits the host's attack surface.
+
+Rationale:
+
+COS is an operating system image for Compute Engine VMs optimized for running containers. With COS, you can bring up your containers on Google Cloud Platform quickly, efficiently, and securely.
+
+Using COS as the node image provides the following benefits:
+
+Run containers out of the box: COS instances come pre-installed with the container runtime and cloud-init. With a COS instance, you can bring up your container at the same time you create your VM, with no on-host setup required.
+
+Smaller attack surface: COS has a smaller footprint, reducing your instance's potential attack surface.
+
+Locked-down by default: COS instances include a locked-down firewall and other security settings by default."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the Kubernetes cluster which does not use COS
+
+Under the Node pools heading, select the Node Pool that requires alteration
+
+Click EDIT
+
+Under the Image Type heading click CHANGE
+
+From the pop-up menu select Container-Optimized OS (cos) and click CHANGE
+
+Repeat for all non-compliant Node pools.
+
+Using Command Line
+
+To set the node image to cos for an existing cluster's Node pool:
+
+gcloud container clusters upgrade [CLUSTER_NAME]\
+  --image-type cos \
+  --zone [COMPUTE_ZONE] --node-pool [POOL_NAME]
+
+Impact:
+
+If modifying an existing cluster's Node pool to run COS, the upgrade operation used is long-running and will block other operations on the cluster (including delete) until it has run to completion.
+
+COS nodes also provide an option with containerd as the main container runtime directly integrated with Kubernetes instead of docker. Thus, on these nodes, Docker cannot view or access containers or images managed by Kubernetes. Your applications should not interact with Docker directly. For general troubleshooting or debugging, use crictl instead.
+
+Default Value:
+
+Container-Optimized OS (COS) is the default option for a cluster node image."
+  reference      : "800-171|3.14.1,800-53|SI-2(5),CIS_Recommendation|5.5.1,CN-L3|8.1.4.4(e),CN-L3|8.1.10.5(a),CN-L3|8.1.10.5(b),CN-L3|8.5.4.1(b),CN-L3|8.5.4.1(d),CN-L3|8.5.4.1(e),CSCv7|3.4,CSF|ID.RA-1,CSF|PR.IP-12,ITSG-33|SI-2,LEVEL|2S,NESA|T7.6.2,NESA|T7.7.1,NIAv2|NS26b,QCSC-v1|11.2,SWIFT-CSCv1|2.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Image Type: \(.config.imageType)\""
+  regex          : "Image Type"
+  expect         : "Image Type: COS"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.7 Ensure Secure Boot for Shielded GKE Nodes is Enabled"
+  info           : "Enable Secure Boot for Shielded GKE Nodes to verify the digital signature of node boot components.
+
+Rationale:
+
+An attacker may seek to alter boot components to persist malware or root kits during system initialisation. Secure Boot helps ensure that the system only runs authentic software by verifying the digital signature of all boot components, and halting the boot process if signature verification fails."
+  solution       : "Once a Node pool is provisioned, it cannot be updated to enable Secure Boot. You must create new Node pools within the cluster with Secure Boot enabled.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+From the list of clusters, click on the cluster requiring the update and click ADD NODE POOL
+
+Ensure that the 'Secure boot' checkbox is checked under the 'Shielded options' Heading
+
+Click SAVE.
+
+You will also need to migrate workloads from existing non-conforming Node pools to the newly created Node pool, then delete the non-conforming pools.
+
+Using Command Line
+
+To create a Node pool within the cluster with Secure Boot enabled, run the following command:
+
+gcloud beta container node-pools create [NODEPOOL_NAME] \
+  --cluster [CLUSTER_NAME] --zone [COMPUTE_ZONE] \
+  --shielded-secure-boot
+
+You will also need to migrate workloads from existing non-conforming Node pools to the newly created Node pool, then delete the non-conforming pools.
+
+Impact:
+
+Secure Boot will not permit the use of third-party unsigned kernel modules.
+
+Default Value:
+
+By default, Secure Boot is disabled in GKE clusters. By default, Secure Boot is disabled when Shielded GKE Nodes is enabled."
+  reference      : "800-53|SI-7.,CIS_Recommendation|5.5.7,CSCv7|5.3,CSF|PR.DS-6,ITSG-33|SI-7,ITSG-33|SI-7a.,LEVEL|2S,NESA|T3.4.1,NESA|T7.3.2,NESA|T7.3.3,QCSC-v1|3.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Shielded Instance - Enable Secure Boot: \(.config.shieldedInstanceConfig.enableSecureBoot)\""
+  regex          : "Shielded Instance - Enable Secure Boot"
+  expect         : "Shielded Instance - Enable Secure Boot: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.1 Enable VPC Flow Logs and Intranode Visibility"
+  info           : "Enable VPC Flow Logs and Intranode Visibility to see pod-level traffic, even for traffic within a worker node.
+
+Rationale:
+
+Enabling Intranode Visibility makes your intranode pod to pod traffic visible to the networking fabric. With this feature, you can use VPC Flow Logs or other VPC features for intranode traffic."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which intranode visibility is disabled
+
+Click on EDIT
+
+Set 'Intranode visibility' to 'Enabled'
+
+Click SAVE.
+
+Using Command Line
+
+To enable intranode visibility on an existing cluster, run the following command:
+
+gcloud beta container clusters update [CLUSTER_NAME] \
+    --enable-intra-node-visibility
+
+Impact:
+
+This is a beta feature. Enabling it on existing cluster causes the cluster master and the cluster nodes to restart, which might cause disruption.
+
+Default Value:
+
+By default, Intranode Visibility is disabled."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|5.6.1,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2S,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Enable Intra Node Visibility: \(.networkConfig.enableIntraNodeVisibility)\""
+  regex          : "Enable Intra Node Visibility"
+  expect         : "Enable Intra Node Visibility: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.4 Ensure clusters are created with Private Endpoint Enabled and Public Access Disabled"
+  info           : "Disable access to the Kubernetes API from outside the node network if it is not required.
+
+Rationale:
+
+In a private cluster, the master node has two endpoints, a private and public endpoint. The private endpoint is the internal IP address of the master, behind an internal load balancer in the master's VPC network. Nodes communicate with the master using the private endpoint. The public endpoint enables the Kubernetes API to be accessed from outside the master's VPC network.
+
+Although Kubernetes API requires an authorized token to perform sensitive actions, a vulnerability could potentially expose the Kubernetes publically with unrestricted access. Additionally, an attacker may be able to identify the current cluster and Kubernetes API version and determine whether it is vulnerable to an attack. Unless required, disabling public endpoint will help prevent such threats, and require the attacker to be on the master's VPC network to perform any attack on the Kubernetes API."
+  solution       : "Once a cluster is created without enabling Private Endpoint only, it cannot be remediated. Rather, the cluster must be recreated.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Configure the cluster as desired then click 'Availability, networking, security, and additional features'
+
+Under 'Network Security' ensure the 'Private cluster' checkbox is checked
+
+Clear the 'Access master using its external IP address' checkbox.
+
+Configure other settings as required
+
+Click CREATE.
+
+Using Command Line
+
+Create a cluster with a Private Endpoint enabled and Public Access disabled by including the --enable-private-endpoint flag within the cluster create command:
+
+gcloud container clusters create [CLUSTER_NAME] \
+  --enable-private-endpoint
+
+Setting this flag also requires the setting of --enable-private-nodes, --enable-ip-alias and --master-ipv4-cidr=[MASTER_CIDR_RANGE].
+
+Impact:
+
+To enable a Private Endpoint, the cluster has to also be configured with private nodes, a private master IP range and IP aliasing enabled.
+
+If the Private Endpoint flag --enable-private-endpoint is passed to the gcloud CLI, or the external IP address undefined in the Google Cloud Console during cluster creation, then all access from a public IP address is prohibited.
+
+Default Value:
+
+By default, the Private Endpoint is disabled."
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|5.6.4,CN-L3|8.1.10.6(j),CSCv7|12,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2S,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Private Cluster Config - Enable Private Endpoint: \(.privateClusterConfig.enablePrivateEndpoint)\""
+  regex          : "Private Cluster Config - Enable Private Endpoint"
+  expect         : "Private Cluster Config - Enable Private Endpoint: true"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.6.6 Consider firewalling GKE worker nodes"
+  info        : "Reduce the network attack surface of GKE nodes by using Firewalls to restrict ingress and egress traffic.
+
+Rationale:
+
+Utilizing stringent ingress and egress firewall rules minimizes the ports and services exposed to an network-based attacker, whilst also restricting egress routes within or out of the cluster in the event that a compromised component attempts to form an outbound connection.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+Go to Firewall Rules by visiting https://console.cloud.google.com/networking/firewalls/list
+
+Click CREATE FIREWALL RULE
+
+Configure the firewall rule as required. Ensure the firewall targets your nodes correctly, either selecting the nodes using tags (under 'Targets', select 'Specified target tags', and set 'Target tags' to [TAG]), or using the Service account associated with node (under 'Targets', select 'Specified service account', set 'Service account scope' as appropriate, and 'Target service account' to [SERVICE_ACCOUNT])
+
+Click CREATE.
+
+Using Command Line
+
+Use the following command to generate firewall rules, setting the variables as appropriate. You may want to use the target [TAG] and [SERVICE_ACCOUNT] previously identified.
+
+gcloud compute firewall-rules create FIREWALL_RULE_NAME \
+    --network [NETWORK] \
+    --priority [PRIORITY] \
+    --direction [DIRECTION] \
+    --action [ACTION] \
+    --target-tags [TAG] \
+    --target-service-accounts [SERVICE_ACCOUNT] \
+    --source-ranges [SOURCE_CIDR-RANGE] \
+    --source-tags [SOURCE_TAGS] \
+    --source-service-accounts=[SOURCE_SERVICE_ACCOUNT] \
+    --destination-ranges [DESTINATION_CIDR_RANGE] \
+    --rules [RULES]
+
+Impact:
+
+All instances targeted by a firewall rule, either using a tag or a service account will be affected. Ensure there are no adverse effects on other instances using the target tag or service account before implementing the firewall rule.
+
+Default Value:
+
+Every VPC network has two implied firewall rules. These rules exist, but are not shown in the Cloud Console:
+
+The implied allow egress rule: An egress rule whose action is allow, destination is 0.0.0.0/0, and priority is the lowest possible (65535) lets any instance send traffic to any destination, except for traffic blocked by GCP. Outbound access may be restricted by a higher priority firewall rule. Internet access is allowed if no other firewall rules deny outbound traffic and if the instance has an external IP address or uses a NAT instance.
+
+The implied deny ingress rule: An ingress rule whose action is deny, source is 0.0.0.0/0, and priority is the lowest possible (65535) protects all instances by blocking incoming traffic to them. Incoming access may be allowed by a higher priority rule. Note that the default network includes some additional rules that override this one, allowing certain types of incoming traffic.
+
+The implied rules cannot be removed, but they have the lowest possible priorities."
+  reference   : "800-53|SC-7.,CIS_Recommendation|5.6.6,CSCv7|9.5,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.6.8 Ensure use of Google-managed SSL Certificates"
+  info        : "Encrypt traffic to HTTPS load balancers using Google-managed SSL certificates.
+
+Rationale:
+
+Encrypting traffic between users and your Kubernetes workload is fundamental to protecting data sent over the web.
+
+Google-managed SSL Certificates are provisioned, renewed, and managed for your domain names. This is only available for HTTPS load balancers created using Ingress Resources, and not TCP/UDP load balancers created using Service of type:LoadBalancer.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "If services of type:LoadBalancer are discovered, consider replacing the Service with an Ingress.
+To configure the Ingress and use Google-managed SSL certificates, follow the instructions as listed at https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs.
+
+Impact:
+
+Google-managed SSL Certificates are less flexible than certificates you obtain and manage yourself. Managed certificates support a single, non-wildcard domain. Self-managed certificates can support wildcards and multiple subject alternative names (SANs).
+
+Default Value:
+
+By default, Google-managed SSL Certificates are not created when an Ingress resource is defined."
+  reference   : "800-53|IA-5.,CIS_Recommendation|5.6.8,CSCv7|14.4,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.7.2 Enable Linux auditd logging"
+  info        : "Run the auditd logging daemon to obtain verbose operating system logs from GKE nodes running Container-Optimized OS (COS).
+
+Rationale:
+
+Auditd logs provide valuable information about the state of the cluster and workloads, such as error messages, login attempts, and binary executions. This information can be used to debug issues or to investigate security incidents.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Command Line
+
+Download the example manifests:
+
+curl https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-node-tools/master/os-audit/cos-auditd-logging.yaml > cos-auditd-logging.yaml
+
+Edit the example manifests if needed. Then, deploy them:
+
+kubectl apply -f cos-auditd-logging.yaml
+
+Verify that the logging Pods have started. If you defined a different Namespace in your manifests, replace cos-auditd with the name of the namespace you're using:
+
+kubectl get pods --namespace=cos-auditd
+
+Impact:
+
+Increased logging activity on a node increases resource usage on that node, which may affect the performance of your workload and may incur additional resource costs. Audit logs sent to Stackdriver consume log quota from the project. You may need to increase your log quota and storage to accommodate the additional logs.
+
+Note that the provided logging daemonset only works on nodes running Container-Optimized OS (COS).
+
+Default Value:
+
+By default, the auditd logging daemonset is not launched when a GKE cluster is created."
+  reference   : "800-53|AU-12.,CIS_Recommendation|5.7.2,CSCv7|6.3,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.8.3 Manage Kubernetes RBAC users with Google Groups for GKE"
+  info        : "Cluster Administrators should leverage G Suite Groups and Cloud IAM to assign Kubernetes user roles to a collection of users, instead of to individual emails using only Cloud IAM.
+
+Rationale:
+
+On- and off-boarding users is often difficult to automate and prone to error. Using a single source of truth for user permissions via G Suite Groups reduces the number of locations that an individual must be off-boarded from, and prevents users gaining unique permissions sets that increase the cost of audit.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the G Suite Groups instructions at https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#google-groups-for-gke.
+Then, create a cluster with
+
+gcloud beta container clusters create my-cluster \
+  --security-group='gke-security-groups@[yourdomain.com]'
+
+Finally create Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings that reference your G Suite Groups.
+
+Impact:
+
+When migrating to using security groups, an audit of RoleBindings and ClusterRoleBindings is required to ensure all users of the cluster are managed using the new groups and not individually.
+
+When managing RoleBindings and ClusterRoleBindings, be wary of inadvertently removing bindings required by service accounts.
+
+Default Value:
+
+Google Groups for GKE is disabled by default."
+  reference   : "800-53|AC-2(7),CIS_Recommendation|5.8.3,CSCv7|16.2,LEVEL|2NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.10.4 Consider GKE Sandbox for running untrusted workloads"
+  info           : "Use GKE Sandbox to restrict untrusted workloads as an additional layer of protection when running in a multi-tenant environment.
+
+Rationale:
+
+GKE Sandbox provides an extra layer of security to prevent untrusted code from affecting the host kernel on your cluster nodes.
+
+When you enable GKE Sandbox on a Node pool, a sandbox is created for each Pod running on a node in that Node pool. In addition, nodes running sandboxed Pods are prevented from accessing other GCP services or cluster metadata. Each sandbox uses its own userspace kernel.
+
+Multi-tenant clusters and clusters whose containers run untrusted workloads are more exposed to security vulnerabilities than other clusters. Examples include SaaS providers, web-hosting providers, or other organizations that allow their users to upload and run code. A flaw in the container runtime or in the host kernel could allow a process running within a container to 'escape' the container and affect the node's kernel, potentially bringing down the node.
+
+The potential also exists for a malicious tenant to gain access to and exfiltrate another tenant's data in memory or on disk, by exploiting such a defect."
+  solution       : "Once a node pool is created, GKE Sandbox cannot be enabled, rather a new node pool is required. The default node pool (the first node pool in your cluster, created when the cluster is created) cannot use GKE Sandbox.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/
+
+Click ADD NODE POOL
+
+Configure the Node pool with following settings:
+
+For the node version, select v1.12.6-gke.8 or higher
+
+For the node image, select 'Container-Optimized OS with Containerd (cos_containerd) (beta)'
+
+Under 'Security', select 'Enable sandbox with gVisor'
+
+Configure other Node pool settings as required
+
+Click SAVE.
+
+Using Command Line
+
+To enable GKE Sandbox on an existing cluster, a new Node pool must be created.
+
+gcloud container node-pools create [NODE_POOL_NAME] \
+  --zone=[COMPUTE-ZONE] \
+  --cluster=[CLUSTER_NAME] \
+  --image-type=cos_containerd \
+  --sandbox type=gvisor
+
+Impact:
+
+Using GKE Sandbox requires the node image to be set to Container-Optimized OS with containerd (cos_containerd).
+
+It is not currently possible to use GKE Sandbox along with the following Kubernetes features:
+
+Accelerators such as GPUs or TPUs
+
+Istio
+
+Monitoring statistics at the level of the Pod or container
+
+Hostpath storage
+
+Per-container PID namespace
+
+CPU and memory limits are only applied for Guaranteed Pods and Burstable Pods, and only when CPU and memory limits are specified for all containers running in the Pod
+
+Pods using PodSecurityPolicies that specify host namespaces, such as hostNetwork, hostPID, or hostIPC
+
+Pods using PodSecurityPolicy settings such as privileged mode
+
+VolumeDevices
+
+Portforward
+
+Linux kernel security modules such as Seccomp, Apparmor, or Selinux Sysctl, NoNewPrivileges, bidirectional MountPropagation, FSGroup, or ProcMount
+
+Default Value:
+
+By default, GKE Sandbox is disabled."
+  reference      : "800-171|3.4.4,800-53|CM-4(1),CIS_Recommendation|5.10.4,CSCv7|18.9,CSF|PR.DS-7,CSF|PR.IP-3,ISO/IEC-27001|A.12.1.4,ITSG-33|CM-4(1),LEVEL|2NS,NESA|T3.2.3,NESA|T3.3.2,NESA|T7.5.1,NESA|T7.6.2,NESA|T7.6.3,QCSC-v1|5.2.1,QCSC-v1|7.2,QCSC-v1|13.2,SWIFT-CSCv1|7.4"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Sandbox Config: \(.nodePools[].config.sandboxConfig.type)\""
+  regex          : "Sandbox Config"
+  expect         : "Sandbox Config: gvisor"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.10.5 Ensure use of Binary Authorization"
+  info           : "Binary Authorization helps to protect supply-chain security by only allowing images with verifiable cryptographically signed metadata into the cluster.
+
+Rationale:
+
+Binary Authorization provides software supply-chain security for images that you deploy to GKE from Google Container Registry (GCR) or another container image registry.
+
+Binary Authorization requires images to be signed by trusted authorities during the development process. These signatures are then validated at deployment time. By enforcing validation, you can gain tighter control over your container environment by ensuring only verified images are integrated into the build-and-release process."
+  solution       : "Using Google Cloud Console
+
+Go to Binary Authorization by visiting https://console.cloud.google.com/security/binary-authorization
+
+Enable the Binary Authorization API (if disabled)
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the Kubernetes cluster for which Binary Authorization is disabled
+
+Click EDIT
+
+Set 'Binary Authorization' to 'Enabled'
+
+Click SAVE
+
+Return to Binary Authorization at https://console.cloud.google.com/security/binary-authorization
+
+Set an appropriate policy for your cluster.
+
+Using Command Line
+
+Update the cluster to enable Binary Authorization:
+
+gcloud container cluster update [CLUSTER_NAME] \
+  --zone [COMPUTE-ZONE] \
+  --enable-binauthz
+
+Create a Binary Authorization Policy using the Binary Authorization Policy Reference (https://cloud.google.com/binary-authorization/docs/policy-yaml-reference) for guidance.
+Import the policy file into Binary Authorization:
+
+gcloud container binauthz policy import [YAML_POLICY]
+
+Impact:
+
+Care must be taken when defining policy in order to prevent inadvertent denial of container image deployments. Depending on policy, attestations for existing container images running within the cluster may need to be created before those images are redeployed or pulled as part of the pod churn.
+
+To prevent key system images from being denied deployment, consider the use of global policy evaluation mode, which uses a global policy provided by Google and exempts a list of Google-provided system images from further policy evaluation.
+
+Default Value:
+
+By default, Binary Authorization is disabled."
+  reference      : "800-171|3.4.1,800-53|CM-2.,CIS_Recommendation|5.10.5,CSCv7|5.2,CSF|DE.AE-1,CSF|PR.DS-7,CSF|PR.IP-1,ITSG-33|CM-2,LEVEL|2S,NESA|T3.2.5,NESA|T7.5.1,NIAv2|SS16,QCSC-v1|5.2.1,QCSC-v1|5.2.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Binary Authorization - Enabled: \(.binaryAuthorization.enabled)\""
+  regex          : "Binary Authorization - Enabled"
+  expect         : "Binary Authorization - Enabled: true"
+  match_all      : YES
+</custom_item>
+
+</check_type>

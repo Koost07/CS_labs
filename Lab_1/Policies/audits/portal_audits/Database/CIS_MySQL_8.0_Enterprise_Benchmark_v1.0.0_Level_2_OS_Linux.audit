@@ -1,0 +1,234 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/08/30 $
+#
+# Description : This audit is based on the Security Configuration Benchmark For MySQL 8.0 Enterprise Editions
+#             Version 1.0.0
+#
+#<ui_metadata>
+#<display_name>CIS MySQL 8.0 Enterprise Linux OS L2 v1.0.0</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>MySQL 8.0 Enterprise Linux L2</name>
+#  <version>1.0.0</version>
+#  <link>https://workbench.cisecurity.org/files/3269</link>
+#</spec>
+#<labels>database,cis,mysql,mysql_8,mysql_8.0,mysql_8.0_enterprise</labels>
+#<benchmark_refs>LEVEL,CIS_Recommendation</benchmark_refs>
+#</ui_metadata>
+
+<check_type:"Unix">
+
+<if>
+  <condition type:"OR">
+    <custom_item>
+      system      : "Linux"
+      type        : RPM_CHECK
+      description : "MySQL 8.0 Enterprise Edition is installed - rpm"
+      rpm         : "mysql-server-8.0.0"
+      operator    : "gte"
+    </custom_item>
+
+    <custom_item>
+      system      : "Linux"
+      type        : CMD_EXEC
+      description : "MySQL 8.0 Enterprise Edition is installed - zypper"
+      cmd         : "/usr/bin/zypper se mysql"
+      expect      : "mysql.*"
+    </custom_item>
+
+    <custom_item>
+      system      : "Linux"
+      type        : CMD_EXEC
+      description : "MySQL 8.0 Enterprise Edition is installed - apt"
+      cmd         : "/usr/bin/apt list | /bin/grep installed"
+      expect      : "mysql.*\\[installed"
+    </custom_item>
+
+    <custom_item>
+      system      : "Linux"
+      type        : CMD_EXEC
+      description : "MySQL 8.0 Enterprise Edition is installed - dpkg"
+      cmd         : "/usr/bin/dpkg -s mysql-commercial-server 2>&1"
+      expect      : "install[\\s]*ok[\\s]*installed"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "CIS_MySQL_8.0_Enterprise_Benchmark_v1.0.0_Level_2_OS_Linux.audit from CIS Oracle MySQL 8.0 Enterprise Edition v1.0.0"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+    </report>
+
+    <if>
+      <condition type:"AND">
+        <custom_item>
+          system      : "Linux"
+          type        : CMD_EXEC
+          description : "~/.mysql_history Exists"
+          cmd         : "/bin/find / -name \".mysql_history\" | /usr/bin/awk '{ print } END { if (NR!=0) print \"none\" }'"
+          expect      : "none"
+        </custom_item>
+      </condition>
+
+      <then>
+        <custom_item>
+          system      : "Linux"
+          type        : CMD_EXEC
+          description : "1.3 Disable MySQL Command History - .mysql_history"
+          info        : "On Linux/UNIX, the MySQL client and MySQL Shell log statements executed interactively to a history file. The default MySQL Client file is named .mysql_history in the user's home directory. The files are split by language and named history.sql, history.js and history.py. Most interactive commands run in the MySQL client application are saved to a history file. The MySQL command history should be disabled. By default, the MySQL Shell does not save history between sessions.
+
+Rationale:
+
+Disabling the MySQL Client and MySQL Shell command history reduces the probability of exposing sensitive information, such as passwords, encryption keys, or other sensitive data or information."
+          solution    : "For MySQL Client perform the following steps to remediate this setting:
+
+Remove .mysql_history if it exists.
+
+Use either of the techniques below to prevent it from being created again:
+
+Set the MYSQL_HISTFILE environment variable to /dev/null. This will need to be placed in the shell's startup script.
+
+Create $HOME/.mysql_history as a symbolic to /dev/null.
+
+> ln -s /dev/null $HOME/.mysql_history
+
+Additionally, another way to prevent history from being recorded is to use --batch option.
+For MySQL Shell perform the following steps to remediate this setting:
+
+Remove $HOME/.mysqlsh/history.* if files exists.
+
+Use either of the techniques below to prevent it from being created again:
+
+Start shell and list show options using \option -l
+
+Set to no history using the command \option --persist history.autoSave=1
+
+Default Value:
+
+By default, the MySQL command history file is located in $HOME/.mysql_history."
+          reference   : "800-171|3.4.2,800-53|CM-6b.,CIS_Recommendation|1.3,CN-L3|8.1.10.6(d),CSCv6|3.1,CSF|PR.IP-1,ITSG-33|CM-6b.,LEVEL|2A,NESA|T3.2.1,PCI-DSSv3.1|2.2.4,PCI-DSSv3.2|2.2.4,SWIFT-CSCv1|2.3"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          cmd         : "a=$(for f in $(/bin/find / -name \".mysql_history\"); do /usr/bin/file $f | /bin/egrep -cv \"symbolic link to \\`/dev/null'\"; done;); if [ \"$a\" = \"0\" ]; then echo \"none\";else for g in $(/bin/find / -name \".mysql_history\"); do /usr/bin/file $g |/bin/egrep -v \"symbolic link to \\`/dev/null'\";done; fi"
+          expect      : "none"
+        </custom_item>
+      </then>
+
+      <else>
+        <custom_item>
+          system      : "Linux"
+          type        : CMD_EXEC
+          description : "1.3 Disable MySQL Command History - ~/.mysql_history"
+          info        : "On Linux/UNIX, the MySQL client and MySQL Shell log statements executed interactively to a history file. The default MySQL Client file is named .mysql_history in the user's home directory. The files are split by language and named history.sql, history.js and history.py. Most interactive commands run in the MySQL client application are saved to a history file. The MySQL command history should be disabled. By default, the MySQL Shell does not save history between sessions.
+
+Rationale:
+
+Disabling the MySQL Client and MySQL Shell command history reduces the probability of exposing sensitive information, such as passwords, encryption keys, or other sensitive data or information."
+          solution    : "For MySQL Client perform the following steps to remediate this setting:
+
+Remove .mysql_history if it exists.
+
+Use either of the techniques below to prevent it from being created again:
+
+Set the MYSQL_HISTFILE environment variable to /dev/null. This will need to be placed in the shell's startup script.
+
+Create $HOME/.mysql_history as a symbolic to /dev/null.
+
+> ln -s /dev/null $HOME/.mysql_history
+
+Additionally, another way to prevent history from being recorded is to use --batch option.
+For MySQL Shell perform the following steps to remediate this setting:
+
+Remove $HOME/.mysqlsh/history.* if files exists.
+
+Use either of the techniques below to prevent it from being created again:
+
+Start shell and list show options using \option -l
+
+Set to no history using the command \option --persist history.autoSave=1
+
+Default Value:
+
+By default, the MySQL command history file is located in $HOME/.mysql_history."
+          reference   : "800-171|3.4.2,800-53|CM-6b.,CIS_Recommendation|1.3,CN-L3|8.1.10.6(d),CSCv6|3.1,CSF|PR.IP-1,ITSG-33|CM-6b.,LEVEL|2A,NESA|T3.2.1,PCI-DSSv3.1|2.2.4,PCI-DSSv3.2|2.2.4,SWIFT-CSCv1|2.3"
+          see_also    : "https://workbench.cisecurity.org/files/3269"
+          cmd         : "/bin/find / -name \".mysql_history\" | /usr/bin/awk '{ print } END { if (NR==0) print \"none\" }'"
+          expect      : "none"
+        </custom_item>
+      </else>
+    </if>
+
+    <custom_item>
+      system      : "Linux"
+      type        : CMD_EXEC
+      description : "1.5 Ensure Interactive Login is Disabled"
+      info        : "When created, the MySQL user may have interactive access to the operating system, which means that the MySQL user could login to the host as any other user would.
+
+    Rationale:
+
+    Preventing the MySQL user from logging in interactively may reduce the impact of a compromised MySQL account. There is also more accountability, as accessing the operating system where the MySQL server lies will require the user's own account. Interactive access by the MySQL user is unnecessary and should be disabled.
+
+    Impact:
+
+    This setting will prevent the MySQL administrator from interactively logging into the operating system using the MySQL user. Instead, the administrator will need to log in using one's own account."
+      solution    : "Execute one of the following commands in a terminal:
+
+    usermod -s /bin/false mysql
+
+    Or
+
+    usermod -s /sbin/nologin mysql"
+      reference   : "800-171|3.1.1,800-53|AC-2.,CIS_Recommendation|1.5,CN-L3|7.1.3.2(d),CSF|DE.CM-1,CSF|DE.CM-3,CSF|PR.AC-1,CSF|PR.AC-4,ISO/IEC-27001|A.9.2.1,ITSG-33|AC-2,LEVEL|2A,NIAv2|AM28,NIAv2|NS5j,NIAv2|SS14e,QCSC-v1|5.2.2,QCSC-v1|8.2.1,QCSC-v1|13.2,QCSC-v1|15.2"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      cmd         : "/usr/bin/getent passwd mysql | /usr/bin/egrep \"^.*[\/bin\/false|\/sbin\/nologin]$\" | /usr/bin/awk '{print} END {if (NR == 1) print \"pass\"}'"
+      expect      : "pass"
+    </custom_item>
+
+    <custom_item>
+      system      : "Linux"
+      type        : CMD_EXEC
+      description : "4.3 Ensure 'allow-suspicious-udfs' is Set to 'OFF'"
+      info        : "This option prevents attaching arbitrary shared library functions as user-defined functions by checking for at least one corresponding method named _init, _deinit, _reset, _clear, or _add.
+
+    Rationale:
+
+    Preventing shared libraries that do not contain user-defined functions from loading will reduce the attack surface of the server."
+      solution    : "Perform the following to establish the recommended state:
+
+    Remove --allow-suspicious-udfs from the mysqld start up command line.
+
+    Remove allow-suspicious-udfs from the MySQL option file.
+
+    Default Value:
+
+    OFF"
+      reference   : "800-171|3.4.6,800-171|3.4.7,800-53|CM-7b.,CIS_Recommendation|4.3,CN-L3|7.1.3.5(c),CN-L3|7.1.3.7(d),CN-L3|8.1.4.4(b),CSF|PR.IP-1,CSF|PR.PT-3,ITSG-33|CM-7a.,LEVEL|2A,NIAv2|SS13b,NIAv2|SS14a,NIAv2|SS14c,QCSC-v1|3.2,SWIFT-CSCv1|2.3"
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+      cmd         : "/usr/bin/my_print_defaults mysqld | /usr/bin/grep allow-suspicious-udfs | /usr/bin/awk '{print} END {if (NR == 0) print \"pass\"}'"
+      expect      : "pass"
+    </custom_item>
+  </then>
+
+  <else>
+    <report type:"WARNING">
+      description : "CIS_MySQL_8.0_Enterprise_Benchmark_v1.0.0_Level_2_OS_Linux.audit from CIS Oracle MySQL 8.0 Enterprise Edition v1.0.0"
+      info        : "NOTE: Nessus has not identified that the chosen audit applies to the target device.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+      see_also    : "https://workbench.cisecurity.org/files/3269"
+    </report>
+  </else>
+</if>
+
+</check_type>

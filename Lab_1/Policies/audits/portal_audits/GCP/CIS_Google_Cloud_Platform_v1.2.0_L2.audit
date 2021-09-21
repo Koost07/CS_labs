@@ -1,0 +1,1030 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/08/05 $
+#
+# Description : This document implements the security configuration as recommended by the
+#               CIS Google Cloud Platform Benchmark
+#
+#<ui_metadata>
+#<display_name>CIS Google Cloud Platform v1.1.0 L2</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>Google Cloud Platform v1.1.0 L2</name>
+#  <version>1.1.0</version>
+#  <link>https://workbench.cisecurity.org/files/3316</link>
+#</spec>
+#<labels>gcp</labels>
+#<benchmark_refs>LEVEL,CSCv6,CSCv7,CIS_Recommendation</benchmark_refs>
+#</ui_metadata>
+
+<check_type:"GCP">
+
+<report type:"WARNING">
+  description : "1.3 Ensure that Security Key Enforcement is enabled for all admin accounts"
+  info        : "Setup Security Key Enforcement for Google Cloud Platform admin accounts.
+
+Rationale:
+
+Google Cloud Platform users with Organization Administrator roles have the highest level of privilege in the organization. These accounts should be protected with the strongest form of two-factor authentication: Security Key Enforcement. Ensure that admins use Security Keys to log in instead of weaker second factors like SMS or one-time passwords (OTP). Security Keys are actual physical keys used to access Google Organization Administrator Accounts. They send an encrypted signature rather than a code, ensuring that logins cannot be phished.
+
+Impact:
+
+If an organization administrator loses access to their security key, the user could lose access to their account. For this reason, it is important to set up backup security keys.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Step 1: Identify users with the Organization Administrator role.
+Step 2: Setup Security Key Enforcement for each account. Learn more at: https://cloud.google.com/security-key/
+
+Default Value:
+
+By default, Security Key Enforcement is not enabled for Organization Administrators."
+  reference   : "800-53|IA-5.,CIS_Recommendation|1.3,CSCv7|16.3,LEVEL|2M"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<report type:"WARNING">
+  description : "1.8 Ensure that Separation of duties is enforced while assigning service account related roles to users"
+  info        : "It is recommended that the principle of 'Separation of Duties' is enforced while assigning service-account related roles to users.
+
+Rationale:
+
+The built-in/predefined IAM role Service Account admin allows the user/identity to create, delete, and manage service account(s). The built-in/predefined IAM role Service Account User allows the user/identity (with adequate privileges on Compute and App Engine) to assign service account(s) to Apps/Compute Instances.
+
+Separation of duties is the concept of ensuring that one individual does not have all necessary permissions to be able to complete a malicious action. In Cloud IAM - service accounts, this could be an action such as using a service account to access resources that user should not normally have access to.
+
+Separation of duties is a business control typically used in larger organizations, meant to help avoid security or privacy incidents and errors. It is considered best practice.
+
+No user should have Service Account Admin and Service Account Userroles assigned at the same time.
+
+Impact:
+
+The removed role should be assigned to a different user based on business needs.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From Console:
+
+Go to IAM & Admin/IAM using https://console.cloud.google.com/iam-admin/iam.
+
+For any member having both Service Account Admin and Service account User roles granted/assigned, click the Delete Bin icon to remove either role from the member.
+Removal of a role should be done based on the business requirements."
+  reference   : "800-53|AC-5.,CIS_Recommendation|1.8,CSCv7|14.6,CSCv7|16,LEVEL|2M"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "1.11 Ensure that Separation of duties is enforced while assigning KMS related roles to users"
+  info           : "It is recommended that the principle of 'Separation of Duties' is enforced while assigning KMS related roles to users.
+
+Rationale:
+
+The built-in/predefined IAM role Cloud KMS Admin allows the user/identity to create, delete, and manage service account(s). The built-in/predefined IAM role Cloud KMS CryptoKey Encrypter/Decrypter allows the user/identity (with adequate privileges on concerned resources) to encrypt and decrypt data at rest using an encryption key(s).
+
+The built-in/predefined IAM role Cloud KMS CryptoKey Encrypter allows the user/identity (with adequate privileges on concerned resources) to encrypt data at rest using an encryption key(s). The built-in/predefined IAM role Cloud KMS CryptoKey Decrypter allows the user/identity (with adequate privileges on concerned resources) to decrypt data at rest using an encryption key(s).
+
+Separation of duties is the concept of ensuring that one individual does not have all necessary permissions to be able to complete a malicious action. In Cloud KMS, this could be an action such as using a key to access and decrypt data a user should not normally have access to. Separation of duties is a business control typically used in larger organizations, meant to help avoid security or privacy incidents and errors. It is considered best practice.
+
+No user(s) should have Cloud KMS Admin and any of the Cloud KMS CryptoKey Encrypter/Decrypter, Cloud KMS CryptoKey Encrypter, Cloud KMS CryptoKey Decrypter roles assigned at the same time.
+
+Impact:
+
+Removed roles should be assigned to another user based on business needs.
+
+NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+  solution       : "From Console:
+
+Go to IAM & Admin/IAM using https://console.cloud.google.com/iam-admin/iam
+
+For any member having Cloud KMS Admin and any of the Cloud KMS CryptoKey Encrypter/Decrypter, Cloud KMS CryptoKey Encrypter, Cloud KMS CryptoKey Decrypter roles granted/assigned, click the Delete Bin icon to remove the role from the member.
+
+Note: Removing a role should be done based on the business requirement."
+  reference      : "800-171|3.1.1,800-53|AC-3.,CIS_Recommendation|1.11,CN-L3|8.1.4.2(f),CN-L3|8.1.4.11(b),CN-L3|8.1.10.2(c),CN-L3|8.5.3.1,CN-L3|8.5.4.1(a),CSCv7|16,CSCv7|4,CSCv7|14.6,CSF|PR.AC-4,CSF|PR.PT-3,ISO/IEC-27001|A.9.4.1,ISO/IEC-27001|A.9.4.5,ITSG-33|AC-3,LEVEL|2A,NESA|T4.2.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.2,NESA|T7.5.3,NIAv2|AM3,NIAv2|SS29,QCSC-v1|3.2,QCSC-v1|5.2.2,QCSC-v1|13.2,TBA-FIISB|31.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listProjectIAM"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.bindings[] | .role as $role | .members[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Member: \(.), Role: \($role)\""
+  regex          : "Role: .*(cloudkms.admin|roles/cloudkms.cryptoKey(En|De)crypter)"
+  expect         : "MANUAL REVIEW REQUIRED"
+  match_all      : YES
+  severity       : MEDIUM
+</custom_item>
+
+<report type:"WARNING">
+  description : "1.12 Ensure API keys are not created for a project"
+  info        : "Keys are insecure because they can be viewed publicly, such as from within a browser, or they can be accessed on a device where the key resides. It is recommended to use standard authentication flow instead.
+
+Rationale:
+
+Security risks involved in using API-Keys appear below:
+
+API keys are simple encrypted strings
+
+API keys do not identify the user or the application making the API request
+
+API keys are typically accessible to clients, making it easy to discover and steal an API key
+
+To avoid the security risk in using API keys, it is recommended to use standard authentication flow instead.
+
+Impact:
+
+Deleting an API key will break dependent applications (if any).
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From Console:
+
+Go to APIs & Services\Credentials using https://console.cloud.google.com/apis/credentials
+
+In the section API Keys, to delete API Keys: Click the Delete Bin Icon in front of every API Key Name."
+  reference   : "800-53|CM-6b.,CIS_Recommendation|1.12,CSCv7|16,LEVEL|2M"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "3.1 Ensure that the default network does not exist in a project"
+  info           : "To prevent use of default network, a project should not have a default network.
+
+Rationale:
+
+The default network has a preconfigured network configuration and automatically generates the following insecure firewall rules:
+
+default-allow-internal: Allows ingress connections for all protocols and ports among instances in the network.
+
+default-allow-ssh: Allows ingress connections on TCP port 22(SSH) from any source to any instance in the network.
+
+default-allow-rdp: Allows ingress connections on TCP port 3389(RDP) from any source to any instance in the network.
+
+default-allow-icmp: Allows ingress ICMP traffic from any source to any instance in the network.
+
+These automatically created firewall rules do not get audit logged and cannot be configured to enable firewall rule logging.
+
+Furthermore, the default network is an auto mode network, which means that its subnets use the same predefined range of IP addresses, and as a result, it's not possible to use Cloud VPN or VPC Network Peering with the default network.
+
+Based on organization security and networking requirements, the organization should create a new network and delete the default network.
+
+Impact:
+
+When an organization deletes the default network, it may need to migrate or service onto a new network."
+  solution       : "From Console:
+
+Go to the VPC networks page by visiting: https://console.cloud.google.com/networking/networks/list.
+
+Click the network named default.
+
+On the network detail page, click EDIT.
+
+Click DELETE VPC NETWORK.
+
+If needed, create a new network to replace the default network.
+
+From Command Line:
+For each Google Cloud Platform project,
+
+Delete the default network:
+
+gcloud compute networks delete default
+
+If needed, create a new network to replace it:
+
+gcloud compute networks create NETWORK_NAME
+
+Prevention:
+The user can prevent the default network and its insecure default firewall rules from being created by setting up an Organization Policy to Skip default network creation at https://console.cloud.google.com/iam-admin/orgpolicies/compute-skipDefaultNetworkCreation.
+
+Default Value:
+
+By default, for each project, a default network is created."
+  reference      : "800-171|3.4.1,800-53|CM-2.,CIS_Recommendation|3.1,CSCv7|11.1,CSF|DE.AE-1,CSF|PR.DS-7,CSF|PR.IP-1,ITSG-33|CM-2,LEVEL|2A,NESA|T3.2.5,NESA|T7.5.1,NIAv2|SS16,QCSC-v1|5.2.1,QCSC-v1|5.2.2"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeNetworks"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | [(.value.items[] | {\"name\": .name})] as $networks | [(.value.items[] | select(.name == \"default\") | {\"name\": .name})] as $default | if ($default | length) > 0 then \"Project Number: \($projectNumber), Project ID: \($projectId), Default Network: YES - \($networks)\" else \"Project Number: \($projectNumber), Project ID: \($projectId), Default Network: NO \($networks)\" end"
+  regex          : "Default Network:"
+  expect         : "Default Network: NO"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "3.6 Ensure that SSH access is restricted from the internet"
+  info           : "GCP Firewall Rules are specific to a VPC Network. Each rule either allows or denies traffic when its conditions are met. Its conditions allow the user to specify the type of traffic, such as ports and protocols, and the source or destination of the traffic, including IP addresses, subnets, and instances.
+
+Firewall rules are defined at the VPC network level and are specific to the network in which they are defined. The rules themselves cannot be shared among networks. Firewall rules only support IPv4 traffic. When specifying a source for an ingress rule or a destination for an egress rule by address, only an IPv4 address or IPv4 block in CIDR notation can be used. Generic (0.0.0.0/0) incoming traffic from the internet to VPC or VM instance using SSH on Port 22 can be avoided.
+
+Rationale:
+
+GCP Firewall Rules within a VPC Network apply to outgoing (egress) traffic from instances and incoming (ingress) traffic to instances in the network. Egress and ingress traffic flows are controlled even if the traffic stays within the network (for example, instance-to-instance communication). For an instance to have outgoing Internet access, the network must have a valid Internet gateway route or custom route whose destination IP is specified. This route simply defines the path to the Internet, to avoid the most general (0.0.0.0/0) destination IP Range specified from the Internet through SSH with the default Port 22. Generic access from the Internet to a specific IP Range needs to be restricted.
+
+Impact:
+
+All Secure Shell (SSH) connections from outside of the network to the concerned VPC(s) will be blocked. There could be a business need where SSH access is required from outside of the network to access resources associated with the VPC. In that case, specific source IP(s) should be mentioned in firewall rules to white-list access to SSH port for the concerned VPC(s)."
+  solution       : "From the Console:
+
+Go to VPC Network.
+
+Go to the Firewall Rules.
+
+Click the Firewall Rule you want to modify.
+
+Click Edit.
+
+Modify Source IP ranges to specific IP.
+
+Click Save.
+
+From Command Line:
+1.Update the Firewall rule with the new SOURCE_RANGE from the below command:
+
+gcloud compute firewall-rules update FirewallName --allow=[PROTOCOL[:PORT[-PORT]],...] --source-ranges=[CIDR_RANGE,...]"
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|3.6,CN-L3|8.1.10.6(j),CSCv7|9.2,CSCv7|12.4,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeFirewallRules"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.items[] | .selfLink as $selfLink | select(.direction == \"INGRESS\") | select(.sourceRanges[] == \"0.0.0.0/0\") | .sourceRanges as $sourceRanges | .allowed[] | .IPProtocol as $ipProtocol | .ports[] as $ports | \"Rule: \($selfLink), IP Protocol: \($ipProtocol), Ports: \($ports)\""
+  regex          : "IP Protocol: (tcp|null)"
+  not_expect     : "Ports: (null|([0-9]|1[0-9]|2[0-2])-(2[2-9]|[3-9][0-9]|[1-9][0-9]{2,})|22$)"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "3.7 Ensure that RDP access is restricted from the Internet"
+  info           : "GCP Firewall Rules are specific to a VPC Network. Each rule either allows or denies traffic when its conditions are met. Its conditions allow users to specify the type of traffic, such as ports and protocols, and the source or destination of the traffic, including IP addresses, subnets, and instances.
+
+Firewall rules are defined at the VPC network level and are specific to the network in which they are defined. The rules themselves cannot be shared among networks. Firewall rules only support IPv4 traffic. When specifying a source for an ingress rule or a destination for an egress rule by address, an IPv4 address or IPv4 block in CIDR notation can be used. Generic (0.0.0.0/0) incoming traffic from the Internet to a VPC or VM instance using RDP on Port 3389 can be avoided.
+
+Rationale:
+
+GCP Firewall Rules within a VPC Network. These rules apply to outgoing (egress) traffic from instances and incoming (ingress) traffic to instances in the network. Egress and ingress traffic flows are controlled even if the traffic stays within the network (for example, instance-to-instance communication). For an instance to have outgoing Internet access, the network must have a valid Internet gateway route or custom route whose destination IP is specified. This route simply defines the path to the Internet, to avoid the most general (0.0.0.0/0) destination IP Range specified from the Internet through RDP with the default Port 3389. Generic access from the Internet to a specific IP Range should be restricted.
+
+Impact:
+
+All Remote Desktop Protocol (RDP) connections from outside of the network to the concerned VPC(s) will be blocked. There could be a business need where secure shell access is required from outside of the network to access resources associated with the VPC. In that case, specific source IP(s) should be mentioned in firewall rules to white-list access to RDP port for the concerned VPC(s)."
+  solution       : "From the Console:
+
+Go to VPC Network.
+
+Go to the Firewall Rules.
+
+Click the Firewall Rule to be modified.
+
+Click Edit.
+
+Modify Source IP ranges to specific IP.
+
+Click Save.
+
+From Command Line:
+1.Update RDP Firewall rule with new SOURCE_RANGE from the below command:
+
+gcloud compute firewall-rules update FirewallName --allow=[PROTOCOL[:PORT[-PORT]],...] --source-ranges=[CIDR_RANGE,...]"
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|3.7,CN-L3|8.1.10.6(j),CSCv7|9.2,CSCv7|12.4,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeFirewallRules"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.items[] | .selfLink as $selfLink | select(.direction == \"INGRESS\") | select(.sourceRanges[] == \"0.0.0.0/0\") | .sourceRanges as $sourceRanges | .allowed[] | .IPProtocol as $ipProtocol | .ports[] as $ports | \"Rule: \($selfLink), IP Protocol: \($ipProtocol), Ports: \($ports)\""
+  regex          : "IP Protocol: (tcp|null)"
+  not_expect     : "Ports: (null|([0-9]|[1-2][0-9]{1,3}|3[0-2][0-9]{2,}|33[0-8][0-9])-(3389|339[0-9]|3[4-9][0-9]{2,}|[4-9][0-9]{3,}|[1-9][0-9]{4,})|3389$)"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "3.10 Ensure Firewall Rules for instances behind Identity Aware Proxy (IAP) only allow the traffic from Google Cloud Loadbalancer (GCLB) Health Check and Proxy Addresses"
+  info        : "Access to VMs should be restricted by firewall rules that allow only IAP traffic by ensuring only connections proxied by the IAP are allowed. To ensure that load balancing works correctly health checks should also be allowed.
+
+Rationale:
+
+IAP ensure that access to VMs is controlled by authenticating incoming requests. However if the VM is still accessible from IP addresses other than the IAP it may still be possible to send unauthenticated requests to the instance. Care must be taken to ensure that loadblancer health checks are not blocked as this would stop the loadbalancer from correctly knowing the health of the VM and loadbalancing correctly.
+
+Impact:
+
+If firewall rules are not configured correctly, legitimate business services could be negatively impacted.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From the Console:
+
+Go to the Cloud Console VPC network > Firewall rules.
+
+Select the checkbox next to the following rules:
+
+default-allow-http
+
+default-allow-https
+
+default-allow-internal
+
+Click Delete.
+
+Click Create firewall rule and set the following values:
+
+Name: allow-iap-traffic
+
+Targets: All instances in the network
+
+Source IP ranges (press Enter after you paste each value in the box):
+
+130.211.0.0/22
+
+35.191.0.0/16
+
+Protocols and ports:
+
+Specified protocols and ports
+
+tcp:80
+
+When you're finished updating values, click Create.
+
+Default Value:
+
+By default all traffic is allowed."
+  reference   : "800-53|SC-7.,CIS_Recommendation|3.10,CSCv7|9,LEVEL|2M"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.7 Ensure VM disks for critical VMs are encrypted with Customer-Supplied Encryption Keys (CSEK)"
+  info           : "Customer-Supplied Encryption Keys (CSEK) are a feature in Google Cloud Storage and Google Compute Engine. If you supply your own encryption keys, Google uses your key to protect the Google-generated keys used to encrypt and decrypt your data. By default, Google Compute Engine encrypts all data at rest. Compute Engine handles and manages this encryption for you without any additional actions on your part. However, if you wanted to control and manage this encryption yourself, you can provide your own encryption keys.
+
+Rationale:
+
+By default, Google Compute Engine encrypts all data at rest. Compute Engine handles and manages this encryption for you without any additional actions on your part. However, if you wanted to control and manage this encryption yourself, you can provide your own encryption keys.
+
+If you provide your own encryption keys, Compute Engine uses your key to protect the Google-generated keys used to encrypt and decrypt your data. Only users who can provide the correct key can use resources protected by a customer-supplied encryption key.
+
+Google does not store your keys on its servers and cannot access your protected data unless you provide the key. This also means that if you forget or lose your key, there is no way for Google to recover the key or to recover any data encrypted with the lost key.
+
+At least business critical VMs should have VM disks encrypted with CSEK.
+
+Impact:
+
+If you lose your encryption key, you will not be able to recover the data."
+  solution       : "Currently there is no way to update the encryption of an existing disk. Therefore you should create a new disk with Encryption set to Customer supplied.
+From Console:
+
+Go to Compute Engine Disks by visiting: https://console.cloud.google.com/compute/disks.
+
+Click CREATE DISK.
+
+Set Encryption type to Customer supplied,
+
+Provide the Key in the box.
+
+Select Wrapped key.
+
+Click Create.
+
+From Command Line:
+In the gcloud compute tool, encrypt a disk using the --csek-key-file flag during instance creation. If you are using an RSA-wrapped key, use the gcloud beta component:
+
+gcloud (beta) compute instances create INSTANCE_NAME --csek-key-file <example-file.json>
+
+To encrypt a standalone persistent disk:
+
+gcloud (beta) compute disks create DISK_NAME --csek-key-file <example-file.json>
+
+Default Value:
+
+By default, VM disks are encrypted with Google-managed keys. They are not encrypted with Customer-Supplied Encryption Keys."
+  reference      : "800-171|3.13.11,800-53|SC-13.,CIS_Recommendation|4.7,CSCv7|13,CSF|PR.DS-5,ISO/IEC-27001|A.10.1.1,ITSG-33|SC-13,ITSG-33|SC-13a.,LEVEL|2A,NESA|M5.2.6,NESA|T7.4.1,NIAv2|CY3,NIAv2|CY4,NIAv2|CY5b,NIAv2|CY5c,NIAv2|CY5d,NIAv2|CY7,NIAv2|NS5e,QCSC-v1|6.2"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeDisks"
+  json_transform : ".projects[] | select(.value.items | length > 0) | .value.items[] | select(.disks | length > 0) | .disks[] | \"Disk: \(.selfLink), Disk Encryption Key: \(.diskEncryptionKey)\""
+  regex          : "Disk Encryption Key:"
+  not_expect     : "Disk Encryption Key: null"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.8 Ensure Compute instances are launched with Shielded VM enabled"
+  info           : "To defend against against advanced threats and ensure that the boot loader and firmware on your VMs are signed and untampered, it is recommended that Compute instances are launched with Shielded VM enabled.
+
+Rationale:
+
+Shielded VMs are virtual machines (VMs) on Google Cloud Platform hardened by a set of security controls that help defend against rootkits and bootkits.
+
+Shielded VM offers verifiable integrity of your Compute Engine VM instances, so you can be confident your instances haven't been compromised by boot- or kernel-level malware or rootkits. Shielded VM's verifiable integrity is achieved through the use of Secure Boot, virtual trusted platform module (vTPM)-enabled Measured Boot, and integrity monitoring.
+
+Shielded VM instances run firmware which is signed and verified using Google's Certificate Authority, ensuring that the instance's firmware is unmodified and establishing the root of trust for Secure Boot.
+
+Integrity monitoring helps you understand and make decisions about the state of your VM instances and the Shielded VM vTPM enables Measured Boot by performing the measurements needed to create a known good boot baseline, called the integrity policy baseline. The integrity policy baseline is used for comparison with measurements from subsequent VM boots to determine if anything has changed.
+
+Secure Boot helps ensure that the system only runs authentic software by verifying the digital signature of all boot components, and halting the boot process if signature verification fails.
+
+Impact:
+
+None."
+  solution       : "To be able turn on Shielded VM on an instance, your instance must use an image with Shielded VM support.
+From Console:
+
+Go to the VM instances page by visiting: https://console.cloud.google.com/compute/instances.
+
+Click on the instance name to see its VM instance details page.
+
+Click STOP to stop the instance.
+
+When the instance has stopped, click EDIT.
+
+In the Shielded VM section, select Turn on vTPM and Turn on Integrity Monitoring.
+
+Optionally, if you do not use any custom or unsigned drivers on the instance, also select Turn on Secure Boot.
+
+Click the Save button to modify the instance and then click START to restart it.
+
+From Command Line:
+You can only enable Shielded VM options on instances that have Shielded VM support. For a list of Shielded VM public images, run the gcloud compute images list command with the following flags:
+
+gcloud compute images list --project gce-uefi-images --no-standard-images
+
+Stop the instance:
+
+gcloud compute instances stop INSTANCE_NAME
+
+Update the instance:
+
+gcloud compute instances update INSTANCE_NAME --shielded-vtpm --shielded-vm-integrity-monitoring
+
+Optionally, if you do not use any custom or unsigned drivers on the instance, also turn on secure boot.
+
+gcloud compute instances update INSTANCE_NAME --shielded-vm-secure-boot
+
+Restart the instance:
+
+gcloud compute instances start INSTANCE_NAME
+
+Prevention:
+You can ensure that all new VMs will be created with Shielded VM enabled by setting up an Organization Policy to for Shielded VM at https://console.cloud.google.com/iam-admin/orgpolicies/compute-requireShieldedVm. Learn more at:
+https://cloud.google.com/security/shielded-cloud/shielded-vm#organization-policy-constraint.
+
+Default Value:
+
+By default, Compute Instances do not have Shielded VM enabled."
+  reference      : "800-53|SI-7(10),CIS_Recommendation|4.8,CSCv7|13,CSF|PR.DS-6,ITSG-33|SI-7,ITSG-33|SI-7a.,LEVEL|2A,NESA|T3.4.1,NESA|T7.3.2,NESA|T7.3.3,QCSC-v1|3.2"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeInstances"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.items[] | .name as $computeZone | select(.value.items | length > 0) | .value.items[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Compute Zone: \($computeZone), Instance: \(.name), Enable Integrity Monitoring: \(.shieldedInstanceConfig.enableIntegrityMonitoring), Enable vTPM: \(.shieldedInstanceConfig.enableVtpm)\""
+  regex          : "Enable Integrity Monitoring:"
+  expect         : "Enable Integrity Monitoring: true, Enable vTPM: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.9 Ensure that Compute instances do not have public IP addresses"
+  info           : "Compute instances should not be configured to have external IP addresses.
+
+Rationale:
+
+To reduce your attack surface, Compute instances should not have public IP addresses. Instead, instances should be configured behind load balancers, to minimize the instance's exposure to the internet.
+
+Impact:
+
+Removing the external IP address from your Compute instance may cause some applications to stop working."
+  solution       : "From Console:
+
+Go to the VM instances page by visiting: https://console.cloud.google.com/compute/instances.
+
+Click on the instance name to go the the Instance detail page.
+
+Click Edit.
+
+For each Network interface, ensure that External IP is set to None.
+
+Click Done and then click Save.
+
+From Command Line:
+
+Describe the instance properties:
+
+gcloud compute instances describe INSTANCE_NAME --zone=ZONE
+
+Identify the access config name that contains the external IP address. This access config appears in the following format:
+
+networkInterfaces:
+- accessConfigs:
+ - kind: compute#accessConfig
+   name: External NAT
+   natIP: 130.211.181.55
+   type: ONE_TO_ONE_NAT
+
+Delete the access config.
+
+gcloud compute instances delete-access-config INSTANCE_NAME --zone=ZONE --access-config-name 'ACCESS_CONFIG_NAME'
+
+In the above example, the ACCESS_CONFIG_NAME is External NAT. The name of your access config might be different.
+Prevention:
+You can configure the Define allowed external IPs for VM instances Organization Policy to prevent VMs from being configured with public IP addresses. Learn more at: https://console.cloud.google.com/orgpolicies/compute-vmExternalIpAccess
+
+Default Value:
+
+By default, Compute instances have a public IP address."
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|4.9,CN-L3|8.1.10.6(j),CSCv7|13,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeInstances"
+  json_transform : ".projects[].value.items[] | select(.value.items | length > 0) | .value.items[] | \"Instance: \(.selfLink), Access Configs: \(.networkInterfaces[].accessConfigs[])\""
+  regex          : "Access Configs:"
+  expect         : "Access Configs: null"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "4.10 Ensure that App Engine applications enforce HTTPS connections"
+  info        : "In order to maintain the highest level of security all connections to an application should be secure by default.
+
+Rationale:
+
+Insecure HTTP connections maybe subject to eavesdropping which can expose sensitive data.
+
+Impact:
+
+All connections to appengine will automatically be redirected to the HTTPS endpoint ensuring that all connections are secured by TLS.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Add a line to the app.yaml file controlling the application which enforces secure connections. For example
+
+handlers:
+- url: /.*
+  **secure: always**
+  redirect_http_response_code: 301
+  script: auto
+
+[https://cloud.google.com/appengine/docs/standard/python3/config/appref]
+
+Default Value:
+
+By default both HTTP and HTTP are supported"
+  reference   : "800-53|SC-8.,CIS_Recommendation|4.10,CSCv7|18.5,LEVEL|2M"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.11 Ensure that Compute instances have Confidential Computing enabled"
+  info           : "Google Cloud encrypts data at-rest and in-transit, but customer data must be decrypted for processing. Confidential Computing is a breakthrough technology which encrypts data in-use-while it is being processed. Confidential Computing environments keep data encrypted in memory and elsewhere outside the central processing unit (CPU).
+
+Confidential VMs leverage the Secure Encrypted Virtualization (SEV) feature of AMD EPYC(TM) CPUs. Customer data will stay encrypted while it is used, indexed, queried, or trained on. Encryption keys are generated in hardware, per VM, and not exportable. Thanks to built-in hardware optimizations of both performance and security, there is no significant performance penalty to Confidential Computing workloads.
+
+Rationale:
+
+Confidential Computing enables customers' sensitive code and other data encrypted in memory during processing. Google does not have access to the encryption keys. Confidential VM can help alleviate concerns about risk related to either dependency on Google infrastructure or Google insiders' access to customer data in the clear.
+
+Impact:
+
+Confidential Computing for Compute instances does not support live migration. Unlike regular Compute instances, Confidential VMs experience disruptions during maintenance events like a software or hardware update.
+
+Additional charges may be incurred when enabling this security feature. See https://cloud.google.com/compute/confidential-vm/pricing for more info."
+  solution       : "Confidential Computing can only be enabled when an instance is created. You must delete the current instance and create a new one.
+From Console:
+
+Go to the VM instances page by visiting: https://console.cloud.google.com/compute/instances.
+
+Click CREATE INSTANCE.
+
+Fill out the desired configuration for your instance.
+
+Under the Confidential VM service section, check the option Enable the Confidential Computing service on this VM instance.
+
+Click Create.
+
+From Command Line:
+Create a new instance with Confidential Compute enabled.
+
+gcloud beta compute instances create INSTANCE_NAME   --zone ZONE   --confidential-compute  --maintenance-policy=TERMINATE
+
+Default Value:
+
+By default, Confidential Computing is disabled for Compute instances."
+  reference      : "800-171|3.13.11,800-53|SC-13.,CIS_Recommendation|4.11,CSCv7|13,CSF|PR.DS-5,ISO/IEC-27001|A.10.1.1,ITSG-33|SC-13,ITSG-33|SC-13a.,LEVEL|2A,NESA|M5.2.6,NESA|T7.4.1,NIAv2|CY3,NIAv2|CY4,NIAv2|CY5b,NIAv2|CY5c,NIAv2|CY5d,NIAv2|CY7,NIAv2|NS5e,QCSC-v1|6.2"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listComputeInstances"
+  json_transform : ".projects[].value.items[] | select(.value.items | length > 0) | .value.items[] | \"Machine Type: \(.machineType), Instance: \(.selfLink), Enable Confidential Compute: \(.confidentialInstanceConfig.enableConfidentialCompute)\""
+  regex          : "machineTypes/n2d-"
+  expect         : "Enable Confidential Compute: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.2 Ensure that Cloud Storage buckets have uniform bucket-level access enabled"
+  info           : "It is recommended that uniform bucket-level access is enabled on Cloud Storage buckets.
+
+Rationale:
+
+It is recommended to use uniform bucket-level access to unify and simplify how you grant access to your Cloud Storage resources.
+
+Cloud Storage offers two systems for granting users permission to access your buckets and objects: Cloud Identity and Access Management (Cloud IAM) and Access Control Lists (ACLs). These systems act in parallel - in order for a user to access a Cloud Storage resource, only one of the systems needs to grant the user permission. Cloud IAM is used throughout Google Cloud and allows you to grant a variety of permissions at the bucket and project levels. ACLs are used only by Cloud Storage and have limited permission options, but they allow you to grant permissions on a per-object basis.
+
+In order to support a uniform permissioning system, Cloud Storage has uniform bucket-level access. Using this feature disables ACLs for all Cloud Storage resources: access to Cloud Storage resources then is granted exclusively through Cloud IAM. Enabling uniform bucket-level access guarantees that if a Storage bucket is not publicly accessible, no object in the bucket is publicly accessible either.
+
+Impact:
+
+If you enable uniform bucket-level access, you revoke access from users who gain their access solely through object ACLs.
+
+Certain Google Cloud services, such as Stackdriver, Cloud Audit Logs, and Datastore, cannot export to Cloud Storage buckets that have uniform bucket-level access enabled."
+  solution       : "From Console:
+
+Open the Cloud Storage browser in the Google Cloud Console by visiting: https://console.cloud.google.com/storage/browser
+
+In the list of buckets, click on the name of the desired bucket.
+
+Select the Permissions tab near the top of the page.
+
+In the text box that starts with This bucket uses fine-grained access control..., click Edit.
+
+In the pop-up menu that appears, select Uniform.
+
+Click Save.
+
+From Command Line:
+Use the on option in a uniformbucketlevelaccess set command:
+
+gsutil uniformbucketlevelaccess set on gs://BUCKET_NAME/
+
+Prevention
+You can set up an Organization Policy to enforce that any new bucket has uniform bucket level access enabled. Learn more at:
+https://cloud.google.com/storage/docs/setting-org-policies#uniform-bucket
+
+Default Value:
+
+By default, Cloud Storage buckets do not have uniform bucket-level access enabled."
+  reference      : "800-171|3.1.1,800-53|AC-3.,CIS_Recommendation|5.2,CN-L3|8.1.4.2(f),CN-L3|8.1.4.11(b),CN-L3|8.1.10.2(c),CN-L3|8.5.3.1,CN-L3|8.5.4.1(a),CSCv7|14.6,CSF|PR.AC-4,CSF|PR.PT-3,ISO/IEC-27001|A.9.4.1,ISO/IEC-27001|A.9.4.5,ITSG-33|AC-3,LEVEL|2A,NESA|T4.2.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.2,NESA|T7.5.3,NIAv2|AM3,NIAv2|SS29,QCSC-v1|3.2,QCSC-v1|5.2.2,QCSC-v1|13.2,TBA-FIISB|31.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listBuckets"
+  json_transform : ".projects[].value.items[] | \"Bucket: \(.selfLink), Uniform Bucket Level Access Enabled: \(.iamConfiguration.uniformBucketLevelAccess.enabled)\""
+  regex          : "Uniform Bucket Level Access Enabled:"
+  expect         : "Uniform Bucket Level Access Enabled: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.2.2 Ensure 'log_error_verbosity' database flag for Cloud SQL PostgreSQL instance is set to 'DEFAULT' or stricter"
+  info           : "The log_error_verbosity flag controls the verbosity/details of messages logged. Valid values are:
+
+TERSE
+
+DEFAULT
+
+VERBOSE
+
+TERSE excludes the logging of DETAIL, HINT, QUERY, and CONTEXT error information.
+
+VERBOSE output includes the SQLSTATE error code, source code file name, function name, and line number that generated the error.
+
+Ensure an appropriate value is set to 'DEFAULT' or stricter.
+
+Rationale:
+
+Auditing helps in troubleshooting operational problems and also permits forensic analysis. If log_error_verbosity is not set to the correct value, too many details or too few details may be logged. This flag should be configured with a value of 'DEFAULT' or stricter. This recommendation is applicable to PostgreSQL database instances."
+  solution       : "Using Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console by visiting https://console.cloud.google.com/sql/instances.
+
+Select the PostgreSQL instance for which you want to enable the database flag.
+
+Click Edit.
+
+Scroll down to the Flags section.
+
+To set a flag that has not been set on the instance before, click Add item, choose the flag log_error_verbosity from the drop-down menu and set appropriate value.
+
+Click Save to save your changes.
+
+Confirm your changes under Flags on the Overview page.
+
+Using Command Line:
+
+List all Cloud SQL database Instances
+
+gcloud sql instances list
+
+Configure the log_error_verbosity database flag for every Cloud SQL PosgreSQL database instance using the below command.
+
+gcloud sql instances patch INSTANCE_NAME --database-flags log_error_verbosity=<TERSE|DEFAULT|VERBOSE>
+
+Note: This command will overwrite all database flags previously set. To keep those and add new ones, include the values for all flags you want set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ('=').
+
+Default Value:
+
+By default log_error_verbosity is DEFAULT."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.2.2,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2M,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | [.settings.databaseFlags[] | select(.name == \"log_error_verbosity\").value] as $value | \"Instance: \(.selfLink), Database Version: \(.databaseVersion), Log Error Verbosity: \($value[0])\""
+  regex          : "Database Version: POSTGRES"
+  expect         : "Log Error Verbosity: (TERSE|DEFAULT)"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.2.9 Ensure 'log_parser_stats' database flag for Cloud SQL PostgreSQL instance is set to 'off'"
+  info           : "The PostgreSQL planner/optimizer is responsible to parse and verify the syntax of each query received by the server. If the syntax is correct a parse tree is built up else an error is generated. The log_parser_stats flag controls the inclusion of parser performance statistics in the PostgreSQL logs for each query.
+
+Rationale:
+
+The log_parser_stats flag enables a crude profiling method for logging parser performance statistics which even though can be useful for troubleshooting, it may increase the amount of logs significantly and have performance overhead. This recommendation is applicable to PostgreSQL database instances."
+  solution       : "Using Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console by visiting https://console.cloud.google.com/sql/instances.
+
+Select the PostgreSQL instance for which you want to enable the database flag.
+
+Click Edit.
+
+Scroll down to the Flags section.
+
+To set a flag that has not been set on the instance before, click Add item, choose the flag log_parser_stats from the drop-down menu and set appropriate value.
+
+Click Save to save your changes.
+
+Confirm your changes under Flags on the Overview page.
+
+Using Command Line:
+
+List all Cloud SQL database Instances
+
+gcloud sql instances list
+
+Configure the log_parser_stats database flag for every Cloud SQL PosgreSQL database instance using the below command.
+
+gcloud sql instances patch INSTANCE_NAME --database-flags log_parser_stats=off
+
+Note: This command will overwrite all database flags previously set. To keep those and add new ones, include the values for all flags you want set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ('=').
+
+Default Value:
+
+By default log_parser_stats is off."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.2.9,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | [.settings.databaseFlags[] | select(.name == \"log_parser_stats\").value] as $value | \"Instance: \(.selfLink), Database Version: \(.databaseVersion), Log Parser Stats: \($value[0])\""
+  regex          : "Database Version: POSTGRES"
+  expect         : "Log Parser Stats: off"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.2.10 Ensure 'log_planner_stats' database flag for Cloud SQL PostgreSQL instance is set to 'off'"
+  info           : "The same SQL query can be excuted in multiple ways and still produce different results. The PostgreSQL planner/optimizer is responsible to create an optimal execution plan for each query. The log_planner_stats flag controls the inclusion of PostgreSQL planner performance statistics in the PostgreSQL logs for each query.
+
+Rationale:
+
+The log_planner_stats flag enables a crude profiling method for logging PostgreSQL planner performance statistics which even though can be useful for troubleshooting, it may increase the amount of logs significantly and have performance overhead. This recommendation is applicable to PostgreSQL database instances."
+  solution       : "Using Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console by visiting https://console.cloud.google.com/sql/instances.
+
+Select the PostgreSQL instance for which you want to enable the database flag.
+
+Click Edit.
+
+Scroll down to the Flags section.
+
+To set a flag that has not been set on the instance before, click Add item, choose the flag log_planner_stats from the drop-down menu and set appropriate value.
+
+Click Save to save your changes.
+
+Confirm your changes under Flags on the Overview page.
+
+Using Command Line:
+
+List all Cloud SQL database Instances
+
+gcloud sql instances list
+
+Configure the log_planner_stats database flag for every Cloud SQL PosgreSQL database instance using the below command.
+
+gcloud sql instances patch INSTANCE_NAME --database-flags log_planner_stats=off
+
+Note: This command will overwrite all database flags previously set. To keep those and add new ones, include the values for all flags you want set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ('=').
+
+Default Value:
+
+By default log_planner_stats is off."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.2.10,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | [.settings.databaseFlags[] | select(.name == \"log_planner_stats\").value] as $value | \"Instance: \(.selfLink), Database Version: \(.databaseVersion), Log Planner Stats: \($value[0])\""
+  regex          : "Database Version: POSTGRES"
+  expect         : "Log Planner Stats: off"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.2.11 Ensure 'log_executor_stats' database flag for Cloud SQL PostgreSQL instance is set to 'off'"
+  info           : "The PostgreSQL executor is responsible to execute the plan handed over by the PostgreSQL planner. The executor processes the plan recursively to extract the required set of rows. The log_executor_stats flag controls the inclusion of PostgreSQL executor performance statistics in the PostgreSQL logs for each query.
+
+Rationale:
+
+The log_executor_stats flag enables a crude profiling method for logging PostgreSQL executor performance statistics which even though can be useful for troubleshooting, it may increase the amount of logs significantly and have performance overhead. This recommendation is applicable to PostgreSQL database instances."
+  solution       : "Using Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console by visiting https://console.cloud.google.com/sql/instances.
+
+Select the PostgreSQL instance for which you want to enable the database flag.
+
+Click Edit.
+
+Scroll down to the Flags section.
+
+To set a flag that has not been set on the instance before, click Add item, choose the flag log_executor_stats from the drop-down menu and set appropriate value.
+
+Click Save to save your changes.
+
+Confirm your changes under Flags on the Overview page.
+
+Using Command Line:
+
+List all Cloud SQL database Instances
+
+gcloud sql instances list
+
+Configure the log_executor_stats database flag for every Cloud SQL PosgreSQL database instance using the below command.
+
+gcloud sql instances patch INSTANCE_NAME --database-flags log_executor_stats=off
+
+Note: This command will overwrite all database flags previously set. To keep those and add new ones, include the values for all flags you want set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ('=').
+
+Default Value:
+
+By default log_executor_stats is off."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.2.11,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | [.settings.databaseFlags[] | select(.name == \"log_executor_stats\").value] as $value | \"Instance: \(.selfLink), Database Version: \(.databaseVersion), Log Executor Stats: \($value[0])\""
+  regex          : "Database Version: POSTGRES"
+  expect         : "Log Executor Stats: off"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.2.12 Ensure 'log_statement_stats' database flag for Cloud SQL PostgreSQL instance is set to 'off'"
+  info           : "The log_statement_stats flag controls the inclusion of end to end performance statistics of a SQL query in the PostgreSQL logs for each query. This cannot be enabled with other module statistics (log_parser_stats, log_planner_stats, log_executor_stats).
+
+Rationale:
+
+The log_statement_stats flag enables a crude profiling method for logging end to end performance statistics of a SQL query. This can be useful for troubleshooting but may increase the amount of logs significantly and have performance overhead. This recommendation is applicable to PostgreSQL database instances."
+  solution       : "Using Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console by visiting https://console.cloud.google.com/sql/instances.
+
+Select the PostgreSQL instance for which you want to enable the database flag.
+
+Click Edit.
+
+Scroll down to the Flags section.
+
+To set a flag that has not been set on the instance before, click Add item, choose the flag log_statement_stats from the drop-down menu and set appropriate value.
+
+Click Save to save your changes.
+
+Confirm your changes under Flags on the Overview page.
+
+Using Command Line:
+
+List all Cloud SQL database Instances
+
+gcloud sql instances list
+
+Configure the log_statement_stats database flag for every Cloud SQL PosgreSQL database instance using the below command.
+
+gcloud sql instances patch INSTANCE_NAME --database-flags log_statement_stats=off
+
+Note: This command will overwrite all database flags previously set. To keep those and add new ones, include the values for all flags you want set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ('=').
+
+Default Value:
+
+By default log_statement_stats is off."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|6.2.12,CSCv7|6.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | [.settings.databaseFlags[] | select(.name == \"log_statement_stats\").value] as $value | \"Instance: \(.selfLink), Database Version: \(.databaseVersion), Log Statement Stats: \($value[0])\""
+  regex          : "Database Version: POSTGRES"
+  expect         : "Log Statement Stats: off"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "6.6 Ensure that Cloud SQL database instances do not have public IPs"
+  info           : "It is recommended to configure Second Generation Sql instance to use private IPs instead of public IPs.
+
+Rationale:
+
+To lower the organization's attack surface, Cloud SQL databases should not have public IPs. Private IPs provide improved network security and lower latency for your application.
+
+Impact:
+
+Removing the public IP address on SQL instances may break some applications that relied on it for database connectivity."
+  solution       : "From Console:
+
+Go to the Cloud SQL Instances page in the Google Cloud Console: https://console.cloud.google.com/sql/instances
+
+Click the instance name to open its Instance details page.
+
+Select the Connections tab.
+
+Deselect the Public IP checkbox.
+
+Click Save to update the instance.
+
+From Command Line:
+
+For every instance remove its public IP and assign a private IP instead:
+
+gcloud beta sql instances patch INSTANCE_NAME --network=VPC_NETWOR_NAME --no-assign-ip
+
+Confirm the changes using the following command::
+
+gcloud sql instances describe INSTANCE_NAME
+
+Prevention:
+To prevent new SQL instances from getting configured with public IP addresses, set up a Restrict Public IP access on Cloud SQL instances Organization policy at: https://console.cloud.google.com/iam-admin/orgpolicies/sql-restrictPublicIp.
+
+Default Value:
+
+By default, Cloud Sql instances have a public IP."
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|6.6,CN-L3|8.1.10.6(j),CSCv7|13,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "listSqlInstances"
+  json_transform : ".projects[].value.items[] | .selfLink as $selfLink | select(.backendType == \"SECOND_GEN\") | .ipAddresses[] | \"Instance: \($selfLink), IP Address: \(.ipAddress), Type: \(.type)\""
+  regex          : "Type:"
+  not_expect     : "Type: PRIMARY"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "7.2 Ensure that all BigQuery Tables are encrypted with Customer-managed encryption key (CMEK)"
+  info        : "BigQuery by default encrypts the data as rest by employing Envelope Encryption using Google managed cryptographic keys. The data is encrypted using the data encryption keys and data encryption keys themselves are further encrypted using key encryption keys. This is seamless and do not require any additional input from the user. However, if you want to have greater control, Customer-managed encryption keys (CMEK) can be used as encryption key management solution for BigQuery Data Sets. If CMEK is used, the CMEK is used to encrypt the data encryption keys instead of using google-managed encryption keys.
+
+Rationale:
+
+BigQuery by default encrypts the data as rest by employing Envelope Encryption using Google managed cryptographic keys. This is seamless and does not require any additional input from the user.
+
+For greater control over the encryption, customer-managed encryption keys (CMEK) can be used as encryption key management solution for BigQuery tables. The CMEK is used to encrypt the data encryption keys instead of using google-managed encryption keys. BigQuery stores the table and CMEK association and the encryption/decryption is done automatically.
+
+Applying the Default Customer-managed keys on BigQuery data sets ensures that all the new tables created in the future will be encrypted using CMEK but existing tables need to be updated to use CMEK individually.
+
+Note: Google does not store your keys on its servers and cannot access your protected data unless you provide the key. This also means that if you forget or lose your key, there is no way for Google to recover the key or to recover any data encrypted with the lost key.
+
+Impact:
+
+Using Customer-managed encryption keys (CMEK) will incur additional labor-hour investment to create, protect, and manage the keys.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Currently, there is no way to update the encryption of existing data in the table. The data needs to be copied to either an original table or another table while specifying the customer managed encryption key (CMEK).
+From Command Line:
+Use the following command to copy the data. The source and the destination needs to be same in case copying to the original table.
+
+bq cp --destination_kms_key <customer_managed_key> source_dataset.source_table destination_dataset.destination_table
+
+Default Value:
+
+Google Managed keys are used as key encryption keys."
+  reference   : "800-53|SC-28.,CIS_Recommendation|7.2,CSCv7|13,LEVEL|2A"
+  see_also    : "https://workbench.cisecurity.org/files/3316"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "7.3 Ensure that a Default Customer-managed encryption key (CMEK) is specified for all BigQuery Data Sets"
+  info           : "BigQuery by default encrypts the data as rest by employing Envelope Encryption using Google managed cryptographic keys. The data is encrypted using the data encryption keys and data encryption keys themselves are further encrypted using key encryption keys. This is seamless and do not require any additional input from the user. However, if you want to have greater control, Customer-managed encryption keys (CMEK) can be used as encryption key management solution for BigQuery Data Sets.
+
+Rationale:
+
+BigQuery by default encrypts the data as rest by employing Envelope Encryption using Google managed cryptographic keys. This is seamless and does not require any additional input from the user.
+
+For greater control over the encryption, customer-managed encryption keys (CMEK) can be used as encryption key management solution for BigQuery Data Sets. Setting a Default Customer-managed encryption key (CMEK) for a data set ensure any tables created in future will use the specified CMEK if none other is provided.
+
+Note: Google does not store your keys on its servers and cannot access your protected data unless you provide the key. This also means that if you forget or lose your key, there is no way for Google to recover the key or to recover any data encrypted with the lost key.
+
+Impact:
+
+Using Customer-managed encryption keys (CMEK) will incur additional labor-hour investment to create, protect, and manage the keys."
+  solution       : "The default CMEK for existing data sets can be updated by specifying the default key in the EncryptionConfiguration.kmsKeyName field when calling the datasets.insert or datasets.patch methods
+
+Default Value:
+
+Google Managed keys are used as key encryption keys."
+  reference      : "800-171|3.5.2,800-53|IA-5.,CIS_Recommendation|7.3,CSCv7|13,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|2A,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2"
+  see_also       : "https://workbench.cisecurity.org/files/3316"
+  request        : "getBqDataset"
+  json_transform : ".projects[].value.datasets[].value | \"Instance: \(.selfLink), KMS Key Name: \(.defaultEncryptionConfiguration.kmsKeyName)\""
+  regex          : "KMS Key Name:"
+  not_expect     : "KMS Key Name: null"
+</custom_item>
+
+</check_type>

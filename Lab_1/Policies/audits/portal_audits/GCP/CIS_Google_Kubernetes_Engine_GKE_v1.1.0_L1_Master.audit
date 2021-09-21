@@ -1,0 +1,1967 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/08/05 $
+#
+# Description : This document implements the security configuration as recommended by the
+#               CIS Google Kubernetes Engine (GKE) Benchmark
+#
+#<ui_metadata>
+#<display_name>CIS Google Kubernetes Engine (GKE) v1.1.0 L1 Master</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>Google Kubernetes Engine (GKE) v1.1.0 L1 Master</name>
+#  <version>1.1.0</version>
+#  <link>https://workbench.cisecurity.org/files/2764</link>
+#</spec>
+#<labels>gke,kubernetes</labels>
+#<benchmark_refs>LEVEL,CSCv6,CSCv7,CIS_Recommendation</benchmark_refs>
+#</ui_metadata>
+
+<check_type:"GCP">
+
+<report type:"WARNING">
+  description : "2.1.1 Client certificate authentication should not be used for users"
+  info        : "Kubernetes provides the option to use client certificates for user authentication. However as there is no way to revoke these certificates when a user leaves an organization or loses their credential, they are not suitable for this purpose.
+
+It is not possible to fully disable client certificate use within a cluster as it is used for component to component authentication.
+
+Rationale:
+
+With any authentication mechanism the ability to revoke credentials if they are compromised or no longer required, is a key control. Kubernetes client certificate authentication does not allow for this due to a lack of support for certificate revocation.
+
+See also Recommendation 6.8.2 for GKE specifically.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Alternative mechanisms provided by Kubernetes such as the use of OIDC should be implemented in place of client certificates.
+You can remediate the availability of client certificates in your GKE cluster. See Recommendation 6.8.2.
+
+Impact:
+
+External mechanisms for authentication generally require additional software to be deployed.
+
+Default Value:
+
+See the GKE documentation for the default value."
+  reference   : "800-53|AC-6(7),CIS_Recommendation|2.1.1,CSCv7|4.3,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "2.2.1 Ensure that a minimal audit policy is created"
+  info        : "Kubernetes can audit the details of requests made to the API server. The --audit-policy-file flag must be set for this logging to be enabled.
+
+Rationale:
+
+Logging is an important detective control for all systems, to detect potential unauthorised access.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "This control cannot be modified in GKE.
+
+Impact:
+
+Audit logs will be created on the master nodes, which will consume disk space. Care should be taken to avoid generating too large volumes of log information as this could impact the available of the cluster nodes.
+
+Default Value:
+
+See the GKE documentation for the default value."
+  reference   : "800-53|AU-12.,CIS_Recommendation|2.2.1,CSCv7|6.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.1 Ensure that the cluster-admin role is only used where required"
+  info        : "The RBAC role cluster-admin provides wide-ranging powers over the environment and should be used only where and when needed.
+
+Rationale:
+
+Kubernetes provides a set of default roles where RBAC is used. Some of these roles such as cluster-admin provide wide-ranging privileges which should only be applied where absolutely necessary. Roles such as cluster-admin allow super-user access to perform any action on any resource. When used in a ClusterRoleBinding, it gives full control over every resource in the cluster and in all namespaces. When used in a RoleBinding, it gives full control over every resource in the rolebinding's namespace, including the namespace itself.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Identify all clusterrolebindings to the cluster-admin role. Check if they are used and if they need this role or if they could use a role with fewer privileges.
+Where possible, first bind users to a lower privileged role and then remove the clusterrolebinding to the cluster-admin role :
+
+kubectl delete clusterrolebinding [name]
+
+Impact:
+
+Care should be taken before removing any clusterrolebindings from the environment to ensure they were not required for operation of the cluster. Specifically, modifications should not be made to clusterrolebindings with the system: prefix as they are required for the operation of system components.
+
+Default Value:
+
+By default a single clusterrolebinding called cluster-admin is provided with the system:masters group as its principal."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.1.1,CSCv6|5.1,CSCv7|5.1,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.2 Minimize access to secrets"
+  info        : "The Kubernetes API stores secrets, which may be service account tokens for the Kubernetes API or credentials used by workloads in the cluster. Access to these secrets should be restricted to the smallest possible group of users to reduce the risk of privilege escalation.
+
+Rationale:
+
+Inappropriate access to secrets stored within the Kubernetes cluster can allow for an attacker to gain additional access to the Kubernetes cluster or external resources whose credentials are stored as secrets.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Where possible, remove get, list and watch access to secret objects in the cluster.
+
+Impact:
+
+Care should be taken not to remove access to secrets to system components which require this for their operation
+
+Default Value:
+
+By default in a kubeadm cluster the following list of principals have get privileges on secret objects
+
+CLUSTERROLEBINDING                                    SUBJECT                             TYPE            SA-NAMESPACE
+
+cluster-admin                                         system:masters                      Group
+
+system:controller:clusterrole-aggregation-controller  clusterrole-aggregation-controller  ServiceAccount  kube-system
+
+system:controller:expand-controller                   expand-controller                   ServiceAccount  kube-system
+
+system:controller:generic-garbage-collector           generic-garbage-collector           ServiceAccount  kube-system
+
+system:controller:namespace-controller                namespace-controller                ServiceAccount  kube-system
+
+system:controller:persistent-volume-binder            persistent-volume-binder            ServiceAccount  kube-system
+
+system:kube-controller-manager                        system:kube-controller-manager      User"
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.1.2,CSCv7|5.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.3 Minimize wildcard use in Roles and ClusterRoles"
+  info        : "Kubernetes Roles and ClusterRoles provide access to resources based on sets of objects and actions that can be taken on those objects. It is possible to set either of these to be the wildcard '*' which matches all items.
+
+Use of wildcards is not optimal from a security perspective as it may allow for inadvertent access to be granted when new resources are added to the Kubernetes API either as CRDs or in later versions of the product.
+
+Rationale:
+
+The principle of least privilege recommends that users are provided only the access required for their role and nothing more. The use of wildcard rights grants is likely to provide excessive rights to the Kubernetes API.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Where possible replace any use of wildcards in clusterroles and roles with specific objects or actions."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.1.3,CSCv7|5.1,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.4 Minimize access to create pods"
+  info        : "The ability to create pods in a namespace can provide a number of opportunities for privilege escalation, such as assigning privileged service accounts to these pods or mounting hostPaths with access to sensitive data (unless Pod Security Policies are implemented to restrict this access)
+
+As such, access to create new pods should be restricted to the smallest possible group of users.
+
+Rationale:
+
+The ability to create pods in a cluster opens up possibilities for privilege escalation and should be restricted, where possible.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Where possible, remove create access to pod objects in the cluster.
+
+Impact:
+
+Care should be taken not to remove access to pods to system components which require this for their operation
+
+Default Value:
+
+By default in a kubeadm cluster the following list of principals have create privileges on pod objects
+
+CLUSTERROLEBINDING                                    SUBJECT                             TYPE            SA-NAMESPACE
+
+cluster-admin                                         system:masters                      Group
+
+system:controller:clusterrole-aggregation-controller  clusterrole-aggregation-controller  ServiceAccount  kube-system
+
+system:controller:daemon-set-controller               daemon-set-controller               ServiceAccount  kube-system
+
+system:controller:job-controller                      job-controller                      ServiceAccount  kube-system
+
+system:controller:persistent-volume-binder            persistent-volume-binder            ServiceAccount  kube-system
+
+system:controller:replicaset-controller               replicaset-controller               ServiceAccount  kube-system
+
+system:controller:replication-controller              replication-controller              ServiceAccount  kube-system
+
+system:controller:statefulset-controller              statefulset-controller              ServiceAccount  kube-system"
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.1.4,CSCv6|5.1,CSCv7|5.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.5 Ensure that default service accounts are not actively used."
+  info        : "The default service account should not be used to ensure that rights granted to applications can be more easily audited and reviewed.
+
+Rationale:
+
+Kubernetes provides a default service account which is used by cluster workloads where no specific service account is assigned to the pod.
+
+Where access to the Kubernetes API from a pod is required, a specific service account should be created for that pod, and rights granted to that service account.
+
+The default service account should be configured such that it does not provide a service account token and does not have any explicit rights assignments.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Create explicit service accounts wherever a Kubernetes workload requires specific access to the Kubernetes API server.
+Modify the configuration of each default service account to include this value
+
+automountServiceAccountToken: false
+
+Impact:
+
+All workloads which require access to the Kubernetes API will require an explicit service account to be created.
+
+Default Value:
+
+By default the default service account allows for its service account token to be mounted in pods in its namespace."
+  reference   : "800-53|IA-5.,CIS_Recommendation|4.1.5,CSCv7|4.3,CSCv7|5.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.1.6 Ensure that Service Account Tokens are only mounted where necessary"
+  info        : "Service accounts tokens should not be mounted in pods except where the workload running in the pod explicitly needs to communicate with the API server
+
+Rationale:
+
+Mounting service account tokens inside pods can provide an avenue for privilege escalation attacks where an attacker is able to compromise a single pod in the cluster.
+
+Avoiding mounting these tokens removes this attack avenue.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Modify the definition of pods and service accounts which do not need to mount service account tokens to disable it.
+
+Impact:
+
+Pods mounted without service account tokens will not be able to communicate with the API server, except where the resource is available to unauthenticated principals.
+
+Default Value:
+
+By default, all pods get a service account token mounted in them."
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.1.6,CSCv6|5.1,CSCv7|5.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.1 Minimize the admission of privileged containers"
+  info           : "Do not generally permit containers to be run with the securityContext.privileged flag set to true.
+
+Rationale:
+
+Privileged containers have access to all Linux Kernel capabilities and devices. A container running with full privileges can do almost everything that the host can do. This flag exists to allow special use-cases, like manipulating the network stack and accessing devices.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit privileged containers.
+
+If you need to run privileged containers, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.privileged field is omitted or set to false.
+
+Impact:
+
+Pods defined with spec.containers[].securityContext.privileged: true will not be permitted.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.1,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"privileged\": .spec.privileged})] as $policies | [(.value.items[] | select(.spec.privileged != true) | {\"policy\": .metadata.name, \"privileged\": .spec.privileged})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.2 Minimize the admission of containers wishing to share the host process ID namespace"
+  info           : "Do not generally permit containers to be run with the hostPID flag set to true.
+
+Rationale:
+
+A container running in the host's PID namespace can inspect processes running outside the container. If the container also has access to ptrace capabilities this can be used to escalate privileges outside of the container.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit containers to share the host PID namespace.
+
+If you need to run containers which require hostPID, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.hostPID field is omitted or set to false.
+
+Impact:
+
+Pods defined with spec.hostPID: true will not be permitted unless they are run under a specific PSP.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.2,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"hostPID\": .spec.hostPID})] as $policies | [(.value.items[] | select(.spec.hostPID != true) | {\"policy\": .metadata.name, \"hostPID\": .spec.hostPID})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.3 Minimize the admission of containers wishing to share the host IPC namespace"
+  info           : "Do not generally permit containers to be run with the hostIPC flag set to true.
+
+Rationale:
+
+A container running in the host's IPC namespace can use IPC to interact with processes outside the container.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit containers to share the host IPC namespace.
+
+If you have a requirement to containers which require hostIPC, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.hostIPC field is omitted or set to false.
+
+Impact:
+
+Pods defined with spec.hostIPC: true will not be permitted unless they are run under a specific PSP.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.3,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"hostIPC\": .spec.hostIPC})] as $policies | [(.value.items[] | select(.spec.hostIPC != true) | {\"policy\": .metadata.name, \"hostIPC\": .spec.hostIPC})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.4 Minimize the admission of containers wishing to share the host network namespace"
+  info           : "Do not generally permit containers to be run with the hostNetwork flag set to true.
+
+Rationale:
+
+A container running in the host's network namespace could access the local loopback device, and could access network traffic to and from other pods.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit containers to share the host network namespace.
+
+If you have need to run containers which require hostNetwork, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.hostNetwork field is omitted or set to false.
+
+Impact:
+
+Pods defined with spec.hostNetwork: true will not be permitted unless they are run under a specific PSP.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.4,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"hostNetwork\": .spec.hostNetwork})] as $policies | [(.value.items[] | select(.spec.hostNetwork != true) | {\"policy\": .metadata.name, \"hostNetwork\": .spec.hostNetwork})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.5 Minimize the admission of containers with allowPrivilegeEscalation"
+  info           : "Do not generally permit containers to be run with the allowPrivilegeEscalation flag set to true.
+
+Rationale:
+
+A container running with the allowPrivilegeEscalation flag set to true may have processes that can gain more privileges than their parent.
+
+There should be at least one PodSecurityPolicy (PSP) defined which does not permit containers to allow privilege escalation. The option exists (and is defaulted to true) to permit setuid binaries to run.
+
+If you have need to run containers which use setuid binaries or require privilege escalation, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.allowPrivilegeEscalation field is omitted or set to false.
+
+Impact:
+
+Pods defined with spec.allowPrivilegeEscalation: true will not be permitted unless they are run under a specific PSP.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.5,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"allowPrivilegeEscalation\": .spec.allowPrivilegeEscalation})] as $policies | [(.value.items[] | select(.spec.allowPrivilegeEscalation != true) | {\"policy\": .metadata.name, \"allowPrivilegeEscalation\": .spec.allowPrivilegeEscalation})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.7 Minimize the admission of containers with the NET_RAW capability"
+  info           : "Do not generally permit containers with the potentially dangerous NET_RAW capability.
+
+Rationale:
+
+Containers run with a default set of capabilities as assigned by the Container Runtime. By default this can include potentially dangerous capabilities. With Docker as the container runtime the NET_RAW capability is enabled which may be misused by malicious containers.
+
+Ideally, all containers should drop this capability.
+
+There should be at least one PodSecurityPolicy (PSP) defined which prevents containers with the NET_RAW capability from launching.
+
+If you need to run containers with this capability, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Create a PSP as described in the Kubernetes documentation, ensuring that the .spec.requiredDropCapabilities is set to include either NET_RAW or ALL.
+
+Impact:
+
+Pods with containers which run with the NET_RAW capability will not be permitted.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.7,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"requiredDropCapabilities\": .spec.requiredDropCapabilities})] as $policies | [(.value.items[] | select((.spec.requiredDropCapabilities // [] | .[] == \"ALL\") or (.spec.requiredDropCapabilities // [] | .[] == \"NET_RAW\")) | {\"policy\": .metadata.name, \"requiredDropCapabilities\": .spec.requiredDropCapabilities})] as $compliant | if ($compliant | length) > 0 then \"\(.endpoint) - compliant policies: \($compliant)\" else \"\(.endpoint) - no compliant policies found: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "4.2.8 Minimize the admission of containers with added capabilities"
+  info           : "Do not generally permit containers with capabilities assigned beyond the default set.
+
+Rationale:
+
+Containers run with a default set of capabilities as assigned by the Container Runtime. Capabilities outside this set can be added to containers which could expose them to risks of container breakout attacks.
+
+There should be at least one PodSecurityPolicy (PSP) defined which prevents containers with capabilities beyond the default set from launching.
+
+If you need to run containers with additional capabilities, this should be defined in a separate PSP and you should carefully check RBAC controls to ensure that only limited service accounts and users are given permission to access that PSP."
+  solution       : "Ensure that allowedCapabilities is not present in PSPs for the cluster unless it is set to an empty array.
+
+Impact:
+
+Pods with containers which require capabilities outwith the default set will not be permitted.
+
+Default Value:
+
+By default, PodSecurityPolicies are not defined."
+  reference      : "800-171|3.4.2,800-53|CM-6.,CIS_Recommendation|4.2.8,CSCv6|5.1,CSCv7|5.2,CSF|PR.IP-1,ITSG-33|CM-6,LEVEL|1S,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listPodSecurityPolicies"
+  json_transform : ".projects[].value.clusters[] | .endpoint as $endpoint | [(.value.items[] | {\"policy\": .metadata.name, \"allowedCapabilities\": .spec.allowedCapabilities})] as $policies | [(.value.items[] | select(.spec.allowedCapabilities | length > 0) | {\"policy\": .metadata.name, \"allowedCapabilities\": .spec.allowedCapabilities})] as $non_compliant | if ($non_compliant | length) > 0 then \"\(.endpoint) - non compliant policies found: \($non_compliant)\" else \"\(.endpoint) - compliant policies: \($policies)\" end"
+  regex          : "compliant"
+  expect         : "compliant policies:"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "4.3.1 Ensure that the CNI in use supports Network Policies"
+  info        : "There are a variety of CNI plugins available for Kubernetes. If the CNI in use does not support Network Policies it may not be possible to effectively restrict traffic in the cluster.
+
+Rationale:
+
+Kubernetes network policies are enforced by the CNI plugin in use. As such it is important to ensure that the CNI plugin supports both Ingress and Egress network policies.
+
+See also Recommendation 6.6.7 for GKE specifically.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "To use a CNI plugin with Network Policy, enable Network Policy in GKE, and the CNI plugin will be updated. See Recommendation 6.6.7.
+
+Impact:
+
+None.
+
+Default Value:
+
+This will depend on the CNI plugin in use."
+  reference   : "800-53|CM-7(5),CIS_Recommendation|4.3.1,CSCv7|18.4,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "4.6.1 Create administrative boundaries between resources using namespaces"
+  info        : "Use namespaces to isolate your Kubernetes objects.
+
+Rationale:
+
+Limiting the scope of user permissions can reduce the impact of mistakes or malicious activities. A Kubernetes namespace allows you to partition created resources into logically named groups. Resources created in one namespace can be hidden from other namespaces. By default, each resource created by a user in Kubernetes cluster runs in a default namespace, called default. You can create additional namespaces and attach resources and users to them. You can use Kubernetes Authorization plugins to create policies that segregate access to namespace resources between different users.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the documentation and create namespaces for objects in your deployment as you need them.
+
+Impact:
+
+You need to switch between namespaces for administration.
+
+Default Value:
+
+By default, Kubernetes starts with two initial namespaces:
+
+default - The default namespace for objects with no other namespace
+
+kube-system - The namespace for objects created by the Kubernetes system"
+  reference   : "800-53|AC-6.,CIS_Recommendation|4.6.1,CSCv6|14,CSCv7|14,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.1.1 Ensure Image Vulnerability Scanning using GCR Container Analysis or a third party provider"
+  info           : "Scan images stored in Google Container Registry (GCR) for vulnerabilities.
+
+Rationale:
+
+Vulnerabilities in software packages can be exploited by hackers or malicious users to obtain unauthorized access to local cloud resources. GCR Container Analysis and other third party products allow images stored in GCR to be scanned for known vulnerabilities."
+  solution       : "Using Google Cloud Console
+
+Go to GCR by visiting https://console.cloud.google.com/gcr
+
+Select Settings and Click Enable Vulnerability Scanning.
+
+Using Command Line
+
+gcloud services enable containerscanning.googleapis.com
+
+Impact:
+
+None.
+
+Default Value:
+
+By default, GCR Container Analysis is disabled."
+  reference      : "800-171|3.11.2,800-171|3.11.3,800-53|RA-5.,CIS_Recommendation|5.1.1,CSCv7|3,CSCv7|3.1,CSCv7|3.2,CSF|DE.CM-8,CSF|DE.DP-4,CSF|DE.DP-5,CSF|ID.RA-1,CSF|PR.IP-12,CSF|RS.CO-3,CSF|RS.MI-3,ISO/IEC-27001|A.12.6.1,ITSG-33|RA-5,LEVEL|1S,NESA|M1.2.2,NESA|M5.4.1,NESA|T7.7.1,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|8.2.1,QCSC-v1|10.2.1,QCSC-v1|11.2,SWIFT-CSCv1|2.7"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listServices"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.services[] | select(.config.name == \"containerscanning.googleapis.com\") | \"Project Number: \($projectNumber), Project ID: \($projectId), Service Name: \(.config.name), State: \(.state)\""
+  regex          : "State"
+  expect         : "State: ENABLED"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.1.2 Minimize user access to GCR"
+  info        : "Restrict user access to GCR, limiting interaction with build images to only authorized personnel and service accounts.
+
+Rationale:
+
+Weak access control to GCR may allow malicious users to replace built images with vulnerable or backdoored containers.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+To modify roles granted at the GCR bucket level
+
+Go to Storage Browser by visiting https://console.cloud.google.com/storage/browser
+
+From the list of storage buckets, select artifacts.[PROJECT_ID].appspot.com for the GCR bucket
+
+Under the Permissions tab, modify permissions of the identified member via the drop down role menu and change the Role to Storage Object Viewer for read-only access.
+
+For a User or Service account with Project level permissions inherited by the GCR bucket, or the Service Account User Role:
+
+Go to IAM by visiting https://console.cloud.google.com/iam-admin/iam
+
+Find the User or Service account to be modified and click on the corresponding pencil icon
+
+Remove the create/modify role (Storage Admin / Storage Object Admin / Storage Object Creator / Service Account User) on the user or service account
+
+If required add the Storage Object Viewer role - note with caution that this permits the account to view all objects stored in GCS for the project.
+
+Using Command Line
+
+To change roles at the GCR bucket level:
+Firstly, run the following if read permissions are required:
+
+gsutil iam ch [TYPE]:[EMAIL-ADDRESS]:objectViewer gs://artifacts.[PROJECT_ID].appspot.com
+
+Then remove the excessively privileged role (Storage Admin / Storage Object Admin / Storage Object Creator) using:
+
+gsutil iam ch -d [TYPE]:[EMAIL-ADDRESS]:[ROLE] gs://artifacts.[PROJECT_ID].appspot.com
+
+where:
+
+[TYPE] can be one of the following:
+
+user, if the [EMAIL-ADDRESS] is a Google account
+
+serviceAccount, if [EMAIL-ADDRESS] specifies a Service account
+
+[EMAIL-ADDRESS] can be one of the following:
+
+a Google account (for example, someone@example.com)
+
+a Cloud IAM service account
+
+To modify roles defined at the project level and subsequently inherited within the GCR bucket, or the Service Account User role, extract the IAM policy file, modify it accordingly and apply it using:
+
+gcloud projects set-iam-policy [PROJECT_ID] [POLICY_FILE]
+
+Impact:
+
+Care should be taken not to remove access to GCR for accounts that require this for their operation. Any account granted the Storage Object Viewer role at the project level can view all objects stored in GCS for the project.
+
+Default Value:
+
+By default, GCR is disabled and access controls are set during initialisation."
+  reference   : "800-53|AC-6.,CIS_Recommendation|5.1.2,CSCv7|14.6,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.1.3 Minimize cluster access to read-only for GCR"
+  info        : "Configure the Cluster Service Account with Storage Object Viewer Role to only allow read-only access to GCR.
+
+Rationale:
+
+The Cluster Service Account does not require administrative access to GCR, only requiring pull access to containers to deploy onto GKE. Restricting permissions follows the principles of least privilege and prevents credentials from being abused beyond the required role.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+For an account explicitly granted access to the bucket:
+
+Go to Storage Browser by visiting https://console.cloud.google.com/storage/browser
+
+From the list of storage buckets, select artifacts.[PROJECT_ID].appspot.com for the GCR bucket
+
+Under the Permissions tab, modify permissions of the identified GKE Service Account via the drop-down role menu and change to the Role to Storage Object Viewer for read-only access.
+
+For an account that inherits access to the bucket through Project level permissions:
+
+Go to IAM console by visiting https://console.cloud.google.com/iam-admin
+
+From the list of accounts, identify the required service account and select the corresponding pencil icon
+
+Remove the Storage Admin / Storage Object Admin / Storage Object Creator roles.
+
+Add the Storage Object Viewer role- note with caution that this permits the account to view all objects stored in GCS for the project.
+
+Click SAVE
+
+Using Command Line
+
+For an account explicitly granted to the bucket. Firstly add read access to the Kubernetes Service Account
+
+gsutil iam ch [TYPE]:[EMAIL-ADDRESS]:objectViewer gs://artifacts.[PROJECT_ID].appspot.com
+
+where:
+
+[TYPE] can be one of the following:
+
+user, if the [EMAIL-ADDRESS] is a Google account
+
+serviceAccount, if [EMAIL-ADDRESS] specifies a Service account
+
+[EMAIL-ADDRESS] can be one of the following:
+
+a Google account (for example, someone@example.com)
+
+a Cloud IAM service account
+
+Then remove the excessively privileged role (Storage Admin / Storage Object Admin / Storage Object Creator) using:
+
+gsutil iam ch -d [TYPE]:[EMAIL-ADDRESS]:[ROLE] gs://artifacts.[PROJECT_ID].appspot.com
+
+For an account that inherits access to the GCR Bucket through Project level permissions, modify the Projects IAM policy file accordingly, then upload it using:
+
+gcloud projects set-iam-policy [PROJECT_ID] [POLICY_FILE]
+
+Impact:
+
+A separate dedicated service account may be required for use by build servers and other robot users pushing or managing container images.
+
+Any account granted the Storage Object Viewer role at the project level can view all objects stored in GCS for the project.
+
+Default Value:
+
+The default permissions for the cluster Service account is dependent on the initial configuration and IAM policy."
+  reference   : "800-53|AC-6.,CIS_Recommendation|5.1.3,CSCv7|3.2,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.2.1 Ensure GKE clusters are not running using the Compute Engine default service account"
+  info           : "Create and use minimally privileged Service accounts to run GKE cluster nodes instead of using the Compute Engine default Service account. Unnecessary permissions could be abused in the case of a node compromise.
+
+Rationale:
+
+A GCP service account (as distinct from a Kubernetes ServiceAccount) is an identity that an instance or an application can use to run GCP API requests on your behalf. This identity is used to identify virtual machine instances to other Google Cloud Platform services. By default, Kubernetes Engine nodes use the Compute Engine default service account. This account has broad access by default, as defined by access scopes, making it useful to a wide variety of applications on the VM, but it has more permissions than are required to run your Kubernetes Engine cluster.
+
+You should create and use a minimally privileged service account to run your Kubernetes Engine cluster instead of using the Compute Engine default service account, and create separate service accounts for each Kubernetes Workload (See Recommendation 6.2.2).
+
+Kubernetes Engine requires, at a minimum, the node service account to have the monitoring.viewer, monitoring.metricWriter, and logging.logWriter roles. Additional roles may need to be added for the nodes to pull images from GCR."
+  solution       : "Using Google Cloud Console
+
+Firstly, create a minimally privileged service account.
+
+Go to Service Accounts by visiting https://console.cloud.google.com/iam-admin/serviceaccounts
+
+Click on CREATE SERVICE ACCOUNT
+
+Enter Service Account Details
+
+Click CREATE
+
+Within Service Account permissions add the following roles:
+
+Logs Writer
+
+Monitoring Metric Writer
+
+Monitoring Viewer
+
+Click CONTINUE
+
+Grant users access to this service account and create keys as required
+
+Click DONE.
+
+To create a Node pool to use the Service account:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click on the cluster name within which the Node pool will be launched
+
+Click on ADD NODE POOL
+
+Within the Node Pool options select the minimally privileged service account from the Service Account drop down under the 'Security' heading
+
+Click SAVE to launch the Node pool.
+
+You will need to migrate your workloads to the new Node pool, and delete Node pools that use the default service account to complete the remediation.
+
+Using Command Line
+
+Firstly, create a minimally privileged service account:
+
+gcloud iam service-accounts create [SA_NAME] \
+  --display-name 'GKE Node Service Account'
+export NODE_SA_EMAIL='gcloud iam service-accounts list \
+  --format='value(email)' \
+  --filter='displayName:GKE Node Service Account''
+
+Grant the following roles to the service account:
+
+export PROJECT_ID='gcloud config get-value project'
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member serviceAccount:$NODE_SA_EMAIL \
+  --role roles/monitoring.metricWriter
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member serviceAccount:$NODE_SA_EMAIL \
+  --role roles/monitoring.viewer
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member serviceAccount:$NODE_SA_EMAIL \
+  --role roles/logging.logWriter
+
+To create a new Node pool using the Service account, run the following command:
+
+gcloud container node-pools create [NODE_POOL] \
+  --service-account=[SA_NAME]@[PROJECT_ID].iam.gserviceaccount.com \
+  --cluster=[CLUSTER_NAME] --zone [COMPUTE_ZONE]
+
+You will need to migrate your workloads to the new Node pool, and delete Node pools that use the default service account to complete the remediation.
+
+Impact:
+
+Instances are automatically granted the https://www.googleapis.com/auth/cloud-platform scope to allow full access to all Google Cloud APIs. This is so that the IAM permissions of the instance are completely determined by the IAM roles of the Service account. Thus if Kubernetes workloads were using cluster access scopes to perform actions using Google APIs, they may no longer be able to, if not permitted by the permissions of the Service account. To remediate, follow Recommendation 6.2.2.
+
+The Service account roles listed here are the minimum required to run the cluster. Additional roles may be required to pull from a private instance of Google Container Registry (GCR).
+
+Default Value:
+
+By default, nodes use the Compute Engine default service account when you create a new cluster."
+  reference      : "800-171|3.1.5,800-53|AC-6.,CIS_Recommendation|5.2.1,CN-L3|7.1.3.2(b),CN-L3|7.1.3.2(g),CN-L3|8.1.4.2(d),CN-L3|8.1.10.6(a),CSCv7|4.3,CSF|PR.AC-4,CSF|PR.DS-5,ITSG-33|AC-6,LEVEL|1S,NESA|T5.1.1,NESA|T5.2.2,NESA|T5.4.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.3,NIAv2|AM1,NIAv2|AM23f,NIAv2|SS13c,NIAv2|SS15c,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|13.2,SWIFT-CSCv1|5.1,TBA-FIISB|31.4.2,TBA-FIISB|31.4.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Service Account: \(.config.serviceAccount)\""
+  regex          : "Service Account"
+  expect         : "Service Account: (?!default)"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.2.2 Prefer using dedicated GCP Service Accounts and Workload Identity"
+  info        : "Kubernetes workloads should not use cluster node service accounts to authenticate to Google Cloud APIs. Each Kubernetes Workload that needs to authenticate to other Google services using Cloud IAM should be provisioned a dedicated Service account. Enabling Workload Identity manages the distribution and rotation of Service account keys for the workloads to use.
+
+Rationale:
+
+Manual approaches for authenticating Kubernetes workloads running on GKE against Google Cloud APIs are: storing service account keys as a Kubernetes secret (which introduces manual key rotation and potential for key compromise); or use of the underlying nodes' IAM Service account, which violates the principle of least privilege on a multitenanted node, when one pod needs to have access to a service, but every other pod on the node that uses the Service account does not.
+
+Once a relationship between a Kubernetes Service account and a GCP Service account has been configured, any workload running as the Kubernetes Service account automatically authenticates as the mapped GCP Service account when accessing Google Cloud APIs on a cluster with Workload Identity enabled.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+From the list of clusters, select your cluster for which Workload Identity is disabled.
+
+Click on EDIT
+
+Set Workload Identity to 'Enabled' and set the Workload Identity Namespace to the namespace of the Cloud project containing the cluster, e.g: [PROJECT_ID].svc.id.goog
+
+Click SAVE and wait for the cluster to update
+
+Once the cluster has updated, select each Node pool within the cluster Details page
+
+For each Node pool, select EDIT within the Node pool Details page
+
+Within the Edit node pool pane, check the 'Enable GKE Metadata Server' checkbox and click SAVE.
+
+Using Command Line
+
+gcloud beta container clusters update [CLUSTER_NAME] --zone [CLUSTER_ZONE] \
+  --identity-namespace=[PROJECT_ID].svc.id.goog
+
+Note that existing Node pools are unaffected. New Node pools default to --workload-metadata-from-node=GKE_METADATA_SERVER.
+
+Then, modify existing Node pools to enable GKE_METADATA_SERVER:
+
+gcloud beta container node-pools update [NODEPOOL_NAME] \
+  --cluster=[CLUSTER_NAME] --zone [CLUSTER_ZONE] \
+  --workload-metadata-from-node=GKE_METADATA_SERVER
+
+You may also need to modify workloads in order for them to use Workload Identity as described within https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity. Also consider the effects on the availability of your hosted workloads as Node pools are updated, it may be more appropriate to create new Node Pools.
+
+Impact:
+
+During the Workload Identity beta, a GCP project can have a maximum of 20 clusters with Workload Identity enabled.
+
+Workload Identity replaces the need to use Metadata Concealment and as such, the two approaches are incompatible. The sensitive metadata protected by Metadata Concealment is also protected by Workload Identity.
+
+When Workload Identity is enabled, you can no longer use the Compute Engine default Service account. Correspondingly, Workload Identity can't be used with Pods running in the host network. You may also need to modify workloads in order for them to use Workoad Identity as described within https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+
+GKE infrastructure pods such as Stackdriver will continue to use the Node's Service account.
+
+Default Value:
+
+By default, Workload Identity is disabled."
+  reference   : "800-53|CM-6b.,CIS_Recommendation|5.2.2,CSCv7|4.3,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.3.1 Ensure Kubernetes Secrets are encrypted using keys managed in Cloud KMS"
+  info           : "Encrypt Kubernetes secrets, stored in etcd, at the application-layer using a customer-managed key in Cloud KMS.
+
+Rationale:
+
+By default, GKE encrypts customer content stored at rest, including Secrets. GKE handles and manages this default encryption for you without any additional action on your part.
+
+Application-layer Secrets Encryption provides an additional layer of security for sensitive data, such as user defined Secrets and Secrets required for the operation of the cluster, such as service account keys, which are all stored in etcd.
+
+Using this functionality, you can use a key, that you manage in Cloud KMS, to encrypt data at the application layer. This protects against attackers in the event that they manage to gain access to etcd."
+  solution       : "To enable Application-layer Secrets Encryption, several configuration items are required. These include:
+
+A key ring
+
+A key
+
+A GKE service account with Cloud KMS CryptoKey Encrypter/Decrypter role
+
+Once these are created, Application-layer Secrets Encryption can be enabled on an existing or new cluster.
+
+Using Google Cloud Console
+
+To create a key:
+
+Go to Cloud KMS by visiting https://console.cloud.google.com/security/kms
+
+Select CREATE KEY RING
+
+Enter a Key ring name and the region where the keys will be stored
+
+Click CREATE
+
+Enter a Key name and appropriate rotation period within the Create key pane
+
+Click CREATE
+
+To enable on a new cluster:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Expand the template by clicking 'Availability, networking, security, and additional features' and check the 'Enable Application-layer Secrets Encryption' checkbox.
+
+Select the desired Key as the customer-managed key and if prompted grant permissions to the GKE Service account
+
+Click CREATE.
+
+To enable on an existing cluster:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click to edit cluster you want to modify.
+
+Enable Application-layer Secrets Encryption and choose the desired Key
+
+Click SAVE.
+
+Using Command Line
+
+To create a key:
+
+Create a key ring:
+
+gcloud kms keyrings create [RING_NAME] \
+    --location [LOCATION] \
+    --project [KEY_PROJECT_ID]
+
+Create a key:
+
+gcloud kms keys create [KEY_NAME] \
+    --location [LOCATION] \
+    --keyring [RING_NAME] \
+    --purpose encryption \
+    --project [KEY_PROJECT_ID]
+
+Grant the Kubernetes Engine Service Agent service account the Cloud KMS CryptoKey Encrypter/Decrypter role:
+
+gcloud kms keys add-iam-policy-binding [KEY_NAME] \
+  --location [LOCATION] \
+  --keyring [RING_NAME] \
+  --member serviceAccount:[SERVICE_ACCOUNT_NAME] \
+  --role roles/cloudkms.cryptoKeyEncrypterDecrypter \
+  --project [KEY_PROJECT_ID]
+
+To create a new cluster with Application-layer Secrets Encryption:
+
+gcloud container clusters create [CLUSTER_NAME] \
+  --cluster-version=latest \
+  --zone [ZONE] \
+  --database-encryption-key projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cryptoKeys/[KEY_NAME] \
+  --project [CLUSTER_PROJECT_ID]
+
+To enable on an existing cluster:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [ZONE] \
+  --database-encryption-key projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cryptoKeys/[KEY_NAME] \
+  --project [CLUSTER_PROJECT_ID]
+
+Impact:
+
+To use the Cloud KMS CryptoKey to protect etcd in the cluster, the 'Kubernetes Engine Service Agent' Service account must hold the 'Cloud KMS CryptoKey Encrypter/Decrypter' role.
+
+Default Value:
+
+By default, Application-layer Secrets Encryption is disabled."
+  reference      : "800-171|3.13.11,800-53|SC-13.,CIS_Recommendation|5.3.1,CSCv7|14.8,CSF|PR.DS-5,ISO/IEC-27001|A.10.1.1,ITSG-33|SC-13,ITSG-33|SC-13a.,LEVEL|1S,NESA|M5.2.6,NESA|T7.4.1,NIAv2|CY3,NIAv2|CY4,NIAv2|CY5b,NIAv2|CY5c,NIAv2|CY5d,NIAv2|CY7,NIAv2|NS5e,QCSC-v1|6.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Database Encryption - State: \(.databaseEncryption.state)\""
+  regex          : "Database Encryption - State"
+  expect         : "Database Encryption - State: ENCRYPTED"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.4.1 Ensure legacy Compute Engine instance metadata APIs are Disabled"
+  info           : "Disable the legacy GCE instance metadata APIs for GKE nodes. Under some circumstances, these can be used from within a pod to extract the node's credentials.
+
+Rationale:
+
+The legacy GCE metadata endpoint allows simple HTTP requests to be made returning sensitive information. To prevent the enumeration of metadata endpoints and data exfiltration, the legacy metadata endpoint must be disabled.
+
+Without requiring a custom HTTP header when accessing the legacy GCE metadata endpoint, a flaw in an application that allows an attacker to trick the code into retrieving the contents of an attacker-specified web URL could provide a simple method for enumeration and potential credential exfiltration. By requiring a custom HTTP header, the attacker needs to exploit an application flaw that allows them to control the URL and also add custom headers in order to carry out this attack successfully."
+  solution       : "The legacy GCE metadata endpoint must be disabled upon the cluster or node-pool creation. For GKE versions 1.12 and newer, the legacy GCE metadata endpoint is disabled by default.
+
+Using Google Cloud Console
+
+To update an existing cluster, create a new Node pool with the legacy GCE metadata endpoint disabled:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click on the name of cluster to be upgraded and click ADD NODE POOL.
+
+Ensure that GCE instance metadata is set to the key:value pair of disable-legacy-endpoints: true
+
+Click SAVE
+
+You will need to migrate workloads from any existing non-conforming Node pools, to the new Node pool, then delete non-conforming Node pools to complete the remediation.
+
+Using Command Line
+
+To update an existing cluster, create a new Node pool with the legacy GCE metadata endpoint disabled:
+
+gcloud container node-pools create [POOL_NAME] \
+ --metadata disable-legacy-endpoints=true \
+ --cluster [CLUSTER_NAME] \
+ --zone [COMPUTE_ZONE]
+
+You will need to migrate workloads from any existing non-conforming Node pools, to the new Node pool, then delete non-conforming Node pools to complete the remediation.
+
+Impact:
+
+Any workloads using the legacy GCE metadata endpoint will no longer be able to retrieve metadata from the endpoint. Use Workload Identity instead.
+
+Default Value:
+
+Note: In GKE cluster versions 1.12 and newer, the --metadata=disable-legacy-endpoints=true setting is automatically enabled."
+  reference      : "800-171|3.14.6,800-171|3.14.7,800-53|SI-4.,CIS_Recommendation|5.4.1,CN-L3|7.1.3.5(a),CN-L3|8.1.10.5(b),CN-L3|8.1.10.6(f),CSCv7|9.2,CSF|DE.AE-1,CSF|DE.AE-2,CSF|DE.AE-3,CSF|DE.AE-4,CSF|DE.CM-1,CSF|DE.CM-5,CSF|DE.CM-6,CSF|DE.CM-7,CSF|DE.DP-2,CSF|DE.DP-3,CSF|DE.DP-4,CSF|DE.DP-5,CSF|ID.RA-1,CSF|PR.DS-5,CSF|PR.IP-8,CSF|RS.AN-1,CSF|RS.CO-3,ITSG-33|SI-4,LEVEL|1S,NESA|M1.2.2,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|10.2.1,QCSC-v1|11.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Disable Legacy Endpoints: \(.config.metadata.\"disable-legacy-endpoints\")\""
+  regex          : "Disable Legacy Endpoints"
+  expect         : "Disable Legacy Endpoints: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.2 Ensure Node Auto-Repair is enabled for GKE nodes"
+  info           : "Nodes in a degraded state are an unknown quantity and so may pose a security risk.
+
+Rationale:
+
+Kubernetes Engine's node auto-repair feature helps you keep the nodes in your cluster in a healthy, running state. When enabled, Kubernetes Engine makes periodic checks on the health state of each node in your cluster. If a node fails consecutive health checks over an extended time period, Kubernetes Engine initiates a repair process for that node."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which node auto-repair is disabled
+
+Click on the name of the Node pool that requires node auto-repair to be enabled
+
+Within the Node pool details pane click EDIT
+
+Under the 'Management' heading, ensure the 'Enable Auto-repair' box is checked.
+
+Click SAVE.
+
+Using Command Line
+
+To enable node auto-repair for an existing cluster with Node pool, run the following command:
+
+gcloud container node-pools update $POOL_NAME --cluster $CLUSTER_NAME --zone $COMPUTE_ZONE --enable-autorepair
+
+Impact:
+
+If multiple nodes require repair, Kubernetes Engine might repair them in parallel. Kubernetes Engine limits number of repairs depending on the size of the cluster (bigger clusters have a higher limit) and the number of broken nodes in the cluster (limit decreases if many nodes are broken).
+
+Node auto-repair is not available on Alpha Clusters.
+
+Default Value:
+
+Node auto-repair is enabled by default."
+  reference      : "800-171|3.11.2,800-171|3.11.3,800-53|RA-5.,CIS_Recommendation|5.5.2,CSCv7|3.1,CSF|DE.CM-8,CSF|DE.DP-4,CSF|DE.DP-5,CSF|ID.RA-1,CSF|PR.IP-12,CSF|RS.CO-3,CSF|RS.MI-3,ISO/IEC-27001|A.12.6.1,ITSG-33|RA-5,LEVEL|1S,NESA|M1.2.2,NESA|M5.4.1,NESA|T7.7.1,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|8.2.1,QCSC-v1|10.2.1,QCSC-v1|11.2,SWIFT-CSCv1|2.7"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Auto Repair: \(.management.autoRepair)\""
+  regex          : "Auto Repair"
+  expect         : "Auto Repair: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.3 Ensure Node Auto-Upgrade is enabled for GKE nodes"
+  info           : "Node auto-upgrade keeps nodes at the current Kubernetes and OS security patch level to mitigate known vulnerabilities.
+
+Rationale:
+
+Node auto-upgrade helps you keep the nodes in your cluster or Node pool up to date with the latest stable patch version of Kubernetes as well as the underlying node operating system. Node auto-upgrade uses the same update mechanism as manual node upgrades.
+
+Node pools with node auto-upgrade enabled are automatically scheduled for upgrades when a new stable Kubernetes version becomes available. When the upgrade is performed, the Node pool is upgraded to match the current cluster master version. From a security perspective, this has the benefit of applying security updates automatically to the Kubernetes Engine when security fixes are released."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which node auto-upgrade is disabled
+
+Click on the name of the Node pool that requires node auto-upgrade to be enabled
+
+Within the Node pool details pane click EDIT
+
+Under the 'Management' heading, ensure the 'Enable auto-upgrade' box is checked.
+Click SAVE.
+
+Using Command Line
+
+To enable node auto-upgrade for an existing cluster's Node pool, run the following command:
+
+gcloud container node-pools update [NODE_POOL] \
+  --cluster [CLUSTER_NAME] --zone [COMPUTE_ZONE] \
+  --enable-autoupgrade
+
+Impact:
+
+Enabling node auto-upgrade does not cause your nodes to upgrade immediately. Automatic upgrades occur at regular intervals at the discretion of the Kubernetes Engine team.
+
+To prevent upgrades occurring during a peak period for your cluster, you should define a maintenance window. A maintenance window is a four-hour timeframe that you choose in which automatic upgrades should occur. Upgrades can occur on any day of the week, and at any time within the timeframe. To prevent upgrades from occurring during certain dates, you should define a maintenance exclusion. A maintenance exclusion can span multiple days.
+
+Default Value:
+
+Node auto-upgrade is enabled by default.
+
+Even if a cluster has been created with node auto-upgrade enabled, this only applies to the default Node pool. Subsequent node pools do not have node auto-upgrade enabled by default."
+  reference      : "800-171|3.14.1,800-53|SI-2(5),CIS_Recommendation|5.5.3,CN-L3|8.1.4.4(e),CN-L3|8.1.10.5(a),CN-L3|8.1.10.5(b),CN-L3|8.5.4.1(b),CN-L3|8.5.4.1(d),CN-L3|8.5.4.1(e),CSCv7|2.2,CSCv7|3.4,CSCv7|3.5,CSF|ID.RA-1,CSF|PR.IP-12,ITSG-33|SI-2,LEVEL|1S,NESA|T7.6.2,NESA|T7.7.1,NIAv2|NS26b,QCSC-v1|11.2,SWIFT-CSCv1|2.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Auto Upgrade: \(.management.autoUpgrade)\""
+  regex          : "Auto Upgrade"
+  expect         : "Auto Upgrade: true"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.5.4 When creating New Clusters - Automate GKE version management using Release Channels"
+  info        : "Subscribe to the Regular or Stable Release Channel to automate version upgrades to the GKE cluster and to reduce version management complexity to the number of features and level of stability required.
+
+Rationale:
+
+Release Channels signal a graduating level of stability and production-readiness. These are based on observed performance of GKE clusters running that version and represent experience and confidence in the cluster version.
+
+The Regular release channel upgrades every few weeks and is for production users who need features not yet offered in the Stable channel. These versions have passed internal validation, but don't have enough historical data to guarantee their stability. Known issues generally have known workarounds.
+
+The Stable release channel upgrades every few months and is for production users who need stability above all else, and for whom frequent upgrades are too risky. These versions have passed internal validation and have been shown to be stable and reliable in production, based on the observed performance of those clusters.
+
+Critical security patches are delivered to all release channels.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Currently, cluster Release Channels are only configurable at cluster provisioning time.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting: https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Under the 'Master Version' heading, click the 'Use Release Channels' button
+
+Select the 'Regular' or 'Stable' channels from the 'Release Channel' drop down menu
+
+Configure the rest of the cluster settings as desired
+
+Click CREATE.
+
+Using Command Line
+
+Create a new cluster by running the following command:
+
+gcloud beta container clusters create [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --release-channel [RELEASE_CHANNEL]
+
+where [RELEASE_CHANNEL] is stable or regular according to your needs.
+
+Impact:
+
+Once release channels are enabled on a cluster, they cannot be disabled. To stop using release channels, you must recreate the cluster without the --release-channel flag.
+
+Node auto-upgrade is enabled (and cannot be disabled), so your cluster is updated automatically from releases available in the chosen release channel.
+
+Default Value:
+
+Currently, release channels are not enabled by default."
+  reference   : "800-53|SI-2(5),CIS_Recommendation|5.5.4,CSCv7|3.4,CSCv7|3.5,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.5 Ensure Shielded GKE Nodes are Enabled"
+  info           : "Shielded GKE Nodes provides verifiable integrity via secure boot, virtual trusted platform module (vTPM)-enabled measured boot, and integrity monitoring.
+
+Rationale:
+
+Shielded GKE nodes protects clusters against boot- or kernel-level malware or rootkits which persist beyond infected OS.
+
+Shielded GKE nodes run firmware which is signed and verified using Google's Certificate Authority, ensuring that the nodes' firmware is unmodified and establishing the root of trust for Secure Boot. GKE node identity is strongly protected via virtual Trusted Platform Module (vTPM) and verified remotely by the master node before the node joins the cluster. Lastly, GKE node integrity (i.e., boot sequence and kernel) is measured and can be monitored and verified remotely."
+  solution       : "Using Google Cloud Console
+
+To update an existing cluster to use Shielded GKE nodes:
+
+Navigate to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the cluster which you wish to enable Shielded GKE Nodes and Click EDIT
+
+Locate the 'Shielded GKE Nodes' drop-down menu and select 'Enabled'
+
+Click SAVE.
+
+Using Command Line
+
+To migrate an existing cluster, you will need to specify the --enable-shielded-nodes flag on a cluster update command:
+
+gcloud beta container clusters update $CLUSTER_NAME \
+  --zone $CLUSTER_ZONE \
+  --enable-shielded-nodes
+
+Impact:
+
+After you enable Shielded GKE Nodes in a cluster, any nodes created in a Node pool without Shielded GKE Nodes enabled, or created outside of any Node pool, aren't able to join the cluster.
+
+Shielded GKE Nodes can only be used with Container-Optimized OS (COS), COS with containerd, and Ubuntu node images.
+
+Default Value:
+
+Currently, Shielded GKE Nodes are not enabled by default.
+
+If Shielded GKE Nodes are enabled, Integrity Monitoring (through Stackdriver) is enabled by default and Secure Boot is disabled by default."
+  reference      : "800-53|SI-7.,CIS_Recommendation|5.5.5,CSCv7|5.3,CSF|PR.DS-6,ITSG-33|SI-7,ITSG-33|SI-7a.,LEVEL|1NS,NESA|T3.4.1,NESA|T7.3.2,NESA|T7.3.3,QCSC-v1|3.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Shielded Nodes - Enabled: \(.shieldedNodes.enabled)\""
+  regex          : "Shielded Nodes - Enabled"
+  expect         : "Shielded Nodes - Enabled: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.5.6 Ensure Integrity Monitoring for Shielded GKE Nodes is Enabled"
+  info           : "Enable Integrity Monitoring for Shielded GKE Nodes to be notified of inconsistencies during the node boot sequence.
+
+Rationale:
+
+Integrity Monitoring provides active alerting for Shielded GKE nodes which allows administrators to respond to integrity failures and prevent compromised nodes from being deployed into the cluster."
+  solution       : "Once a Node pool is provisioned, it cannot be updated to enable Integrity Monitoring. You must create new Node pools within the cluster with Integrity Monitoring enabled
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+From the list of clusters, click on the cluster requiring the update and click ADD NODE POOL
+
+Ensure that the 'Integrity monitoring' checkbox is checked under the 'Shielded options' Heading.
+
+Click SAVE.
+
+You will also need to migrate workloads from existing non-conforming Node pools to the newly created Node pool, then the non-conforming pools.
+
+Using Command Line
+
+To create a Node pool within the cluster with Integrity Monitoring enabled, run the following command:
+
+gcloud beta container node-pools create [NODEPOOL_NAME] \
+  --cluster [CLUSTER_NAME] --zone [COMPUTE_ZONE] \
+  --shielded-integrity-monitoring
+
+You will also need to migrate workloads from existing non-conforming Node pools to the newly created Node pool, then delete the non-conforming pools.
+
+Impact:
+
+None.
+
+Default Value:
+
+Integrity Monitoring is disabled by default on GKE clusters. Integrity Monitoring is enabled by default for Shielded GKE Nodes; however, if Secure Boot is enabled at creation time, Integrity Monitoring is disabled."
+  reference      : "800-53|SI-7.,CIS_Recommendation|5.5.6,CSCv7|5.3,CSF|PR.DS-6,ITSG-33|SI-7,ITSG-33|SI-7a.,LEVEL|1S,NESA|T3.4.1,NESA|T7.3.2,NESA|T7.3.3,QCSC-v1|3.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | .name as $clusterName | .nodePools[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \($clusterName), Node Pool Name: \(.name), Shielded Instance - Enable Integrity Monitoring: \(.config.shieldedInstanceConfig.enableIntegrityMonitoring)\""
+  regex          : "Shielded Instance - Enable Integrity Monitoring"
+  expect         : "Shielded Instance - Enable Integrity Monitoring: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.2 Ensure use of VPC-native clusters"
+  info           : "Create Alias IPs for the node network CIDR range in order to subsequently configure IP-based policies and firewalling for pods. A cluster that uses Alias IPs is called a 'VPC-native' cluster.
+
+Rationale:
+
+Using Alias IPs has several benefits:
+
+Pod IPs are reserved within the network ahead of time, which prevents conflict with other compute resources.
+
+The networking layer can perform anti-spoofing checks to ensure that egress traffic is not sent with arbitrary source IPs.
+
+Firewall controls for Pods can be applied separately from their nodes.
+
+Alias IPs allow Pods to directly access hosted services without using a NAT gateway."
+  solution       : "Use of Alias IPs cannot be enabled on an existing cluster. To create a new cluster using Alias IPs, follow the instructions below.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Configure your cluster as desired. Then, click 'Availability, networking, security, and additional features'
+
+In the 'VPC-native' section, leave 'Enable VPC-native (using alias IP)' selected
+
+Click CREATE.
+
+Using Command Line
+
+To enable Alias IP on a new cluster, run the following command:
+
+gcloud container clusters create [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-ip-alias
+
+Impact:
+
+You cannot currently migrate an existing cluster that uses routes for Pod routing to a cluster that uses Alias IPs.
+
+Cluster IPs for internal services remain only available from within the cluster. If you want to access a Kubernetes Service from within the VPC, but from outside of the cluster, use an internal load balancer.
+
+Default Value:
+
+By default, VPC-native (using alias IP) is enabled when you create a new cluster in the Google Cloud Console, however this is disabled when creating a new cluster using the gcloud CLI, unless the --enable-ip-alias argument is specified."
+  reference      : "800-171|3.1.3,800-53|AC-4(21),CIS_Recommendation|5.6.2,CN-L3|8.1.10.2(c),CSCv7|11,CSCv7|14.1,CSF|DE.AE-1,CSF|ID.AM-3,CSF|PR.AC-5,CSF|PR.PT-4,ITSG-33|AC-4,LEVEL|1S,NESA|T4.2.1,NESA|T4.5.1,NESA|T4.5.3,NESA|T4.5.4,NESA|T5.4.6,NESA|T5.7.2,NESA|T7.5.2,NESA|T7.6.4,NIAv2|NS10,NIAv2|NS11,QCSC-v1|4.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|6.2,SWIFT-CSCv1|2.1,SWIFT-CSCv1|2.4"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Use IP Aliases: \(.ipAllocationPolicy.useIpAliases)\""
+  regex          : "Use IP Aliases"
+  expect         : "Use IP Aliases: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.3 Ensure Master Authorized Networks is Enabled"
+  info           : "Enable Master Authorized Networks to restrict access to the cluster's control plane (master endpoint) to only an allowlist (whitelist) of authorized IPs.
+
+Rationale:
+
+Authorized networks are a way of specifying a restricted range of IP addresses that are permitted to access your cluster's control plane. Kubernetes Engine uses both Transport Layer Security (TLS) and authentication to provide secure access to your cluster's control plane from the public internet. This provides you the flexibility to administer your cluster from anywhere; however, you might want to further restrict access to a set of IP addresses that you control. You can set this restriction by specifying an authorized network.
+
+Master Authorized Networks blocks untrusted IP addresses. Google Cloud Platform IPs (such as traffic from Compute Engine VMs) can reach your master through HTTPS provided that they have the necessary Kubernetes credentials.
+
+Restricting access to an authorized network can provide additional security benefits for your container cluster, including:
+
+Better protection from outsider attacks: Authorized networks provide an additional layer of security by limiting external, non-GCP access to a specific set of addresses you designate, such as those that originate from your premises. This helps protect access to your cluster in the case of a vulnerability in the cluster's authentication or authorization mechanism.
+
+Better protection from insider attacks: Authorized networks help protect your cluster from accidental leaks of master certificates from your company's premises. Leaked certificates used from outside GCP and outside the authorized IP ranges (for example, from addresses outside your company) are still denied access."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which Master Authorized Networks is disabled
+
+Click on EDIT
+
+Set 'Master authorized networks' to 'Enabled' and add authorize networks
+
+Click SAVE.
+
+Using Command Line
+
+To enable Master Authorized Networks for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-master-authorized-networks
+
+Along with this, you can list authorized networks using the --master-authorized-networks flag which contains a list of up to 20 external networks that are allowed to connect to your cluster's control plane through HTTPS. You provide these networks as a comma-separated list of addresses in CIDR notation (such as 90.90.100.0/24).
+
+Impact:
+
+When implementing Master Authorized Networks, be careful to ensure all desired networks are on the allowlist (whitelist) to prevent inadvertently blocking external access to your cluster's control plane.
+
+Default Value:
+
+By default, Master Authorized Networks is disabled."
+  reference      : "800-171|3.1.1,800-53|AC-3.,CIS_Recommendation|5.6.3,CN-L3|8.1.4.2(f),CN-L3|8.1.4.11(b),CN-L3|8.1.10.2(c),CN-L3|8.5.3.1,CN-L3|8.5.4.1(a),CSCv7|14.6,CSF|PR.AC-4,CSF|PR.PT-3,ISO/IEC-27001|A.9.4.1,ISO/IEC-27001|A.9.4.5,ITSG-33|AC-3,LEVEL|1S,NESA|T4.2.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.2,NESA|T7.5.3,NIAv2|AM3,NIAv2|SS29,QCSC-v1|3.2,QCSC-v1|5.2.2,QCSC-v1|13.2,TBA-FIISB|31.1"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Master Authorized Networks Config - Enabled: \(.masterAuthorizedNetworksConfig.enabled)\""
+  regex          : "Master Authorized Networks Config - Enabled"
+  expect         : "Master Authorized Networks Config - Enabled: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.5 Ensure clusters are created with Private Nodes"
+  info           : "Disable public IP addresses for cluster nodes, so that they only have private IP addresses. Private Nodes are nodes with no public IP addresses.
+
+Rationale:
+
+Disabling public IP addresses on cluster nodes restricts access to only internal networks, forcing attackers to obtain local network access before attempting to compromise the underlying Kubernetes hosts."
+  solution       : "Once a cluster is created without enabling Private Nodes, it cannot be remediated. Rather the cluster must be recreated.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Configure the cluster as desired then click 'Availability, networking, security, and additional features'
+
+Under 'Network Security' ensure the 'Private cluster' checkbox is checked
+
+Configure other settings as required
+
+Click CREATE.
+
+Using Command Line
+
+To create a cluster with Private Nodes enabled, include the --enable-private-nodes flag within the cluster create command:
+
+gcloud container clusters create [CLUSTER_NAME]  \
+  --enable-private-nodes
+
+Setting this flag also requires the setting of --enable-ip-alias and --master-ipv4-cidr=[MASTER_CIDR_RANGE].
+
+Impact:
+
+To enable Private Nodes, the cluster has to also be configured with a private master IP range and IP Aliasing enabled.
+
+Private Nodes do not have outbound access to the public internet. If you want to provide outbound Internet access for your private nodes, you can use Cloud NAT or you can manage your own NAT gateway.
+
+To access Google Cloud APIs and services from private nodes, Private Google Access needs to be set on Kubernetes Engine Cluster Subnets.
+
+Default Value:
+
+By default, Private Nodes are disabled."
+  reference      : "800-171|3.13.1,800-171|3.13.5,800-53|SC-7.,CIS_Recommendation|5.6.5,CN-L3|8.1.10.6(j),CSCv7|12,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.DS-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7,LEVEL|1S,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Enable Private Nodes: \(.privateClusterConfig.enablePrivateNodes)\""
+  regex          : "Enable Private Nodes"
+  expect         : "Enable Private Nodes: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.6.7 Ensure Network Policy is Enabled and set as appropriate"
+  info           : "Use Network Policy to restrict pod to pod traffic within a cluster and segregate workloads.
+
+Rationale:
+
+By default, all pod to pod traffic within a cluster is allowed. Network Policy creates a pod-level firewall that can be used to restrict traffic between sources. Pod traffic is restricted by having a Network Policy that selects it (through the use of labels). Once there is any Network Policy in a namespace selecting a particular pod, that pod will reject any connections that are not allowed by any Network Policy. Other pods in the namespace that are not selected by any Network Policy will continue to accept all traffic.
+
+Network Policies are managed via the Kubernetes Network Policy API and enforced by a network plugin, simply creating the resource without a compatible network plugin to implement it will have no effect. GKE supports Network Policy enforcement through the use of Calico."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the cluster for which Network policy is disabled
+
+Click EDIT
+
+Set 'Network policy for master' to 'Enabled'
+
+Click SAVE
+
+Once the cluster has updated, repeat steps 1-3
+
+Set 'Network Policy for nodes' to 'Enabled'
+
+Click SAVE.
+
+Using Command Line
+
+To enable Network Policy for an existing cluster, firstly enable the Network Policy add-on:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --update-addons NetworkPolicy=ENABLED
+
+Then, enable Network Policy:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-network-policy
+
+Impact:
+
+Network Policy requires the Network Policy add-on. This add-on is included automatically when a cluster with Network Policy is created, but for an existing cluster, needs to be added prior to enabling Network Policy.
+
+Enabling/Disabling Network Policy causes a rolling update of all cluster nodes, similar to performing a cluster upgrade. This operation is long-running and will block other operations on the cluster (including delete) until it has run to completion.
+
+If Network Policy is used, a cluster must have at least 2 nodes of type n1-standard-1 or higher. The recommended minimum size cluster to run Network Policy enforcement is 3 n1-standard-1 instances.
+
+Enabling Network Policy enforcement consumes additional resources in nodes. Specifically, it increases the memory footprint of the kube-system process by approximately 128MB, and requires approximately 300 millicores of CPU.
+
+Default Value:
+
+By default, Network Policy is disabled."
+  reference      : "800-171|3.14.6,800-171|3.14.7,800-53|SI-4.,CIS_Recommendation|5.6.7,CN-L3|7.1.3.5(a),CN-L3|8.1.10.5(b),CN-L3|8.1.10.6(f),CSCv7|9.2,CSCv7|9.4,CSF|DE.AE-1,CSF|DE.AE-2,CSF|DE.AE-3,CSF|DE.AE-4,CSF|DE.CM-1,CSF|DE.CM-5,CSF|DE.CM-6,CSF|DE.CM-7,CSF|DE.DP-2,CSF|DE.DP-3,CSF|DE.DP-4,CSF|DE.DP-5,CSF|ID.RA-1,CSF|PR.DS-5,CSF|PR.IP-8,CSF|RS.AN-1,CSF|RS.CO-3,ITSG-33|SI-4,LEVEL|1NS,NESA|M1.2.2,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|5.2.3,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|10.2.1,QCSC-v1|11.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Network Policy - Enabled: \(.networkPolicy.enabled)\""
+  regex          : "Network Policy - Enabled"
+  expect         : "Network Policy - Enabled: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.7.1 Ensure Stackdriver Kubernetes Logging and Monitoring is Enabled - loggingService"
+  info           : "Send logs and metrics to a remote aggregator to mitigate the risk of local tampering in the event of a breach.
+
+Rationale:
+
+Exporting logs and metrics to a dedicated, persistent datastore such as Stackdriver ensures availability of audit data following a cluster security event, and provides a central location for analysis of log and metric data collated from multiple sources.
+
+Currently, there are two mutually exclusive variants of Stackdriver available for use with GKE clusters: Legacy Stackdriver Support and Stackdriver Kubernetes Engine Monitoring Support.
+
+Although Stackdriver Kubernetes Engine Monitoring is the preferred option, starting with GKE versions 1.12.7 and 1.13, Legacy Stackdriver is the default option up through GKE version 1.13. The use of either of these services is sufficient to pass the benchmark recommendation.
+
+However, note that as Legacy Stackdriver Support is not getting any improvements and lacks features present in Stackdriver Kubernetes Engine Monitoring, Legacy Stackdriver Support may be deprecated in favour of Stackdriver Kubernetes Engine Monitoring Support in future versions of this benchmark."
+  solution       : "Using Google Cloud Console
+
+STACKDRIVER KUBERNETES ENGINE MONITORING SUPPORT (PREFERRED):
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which Stackdriver Kubernetes Engine Monitoring is disabled
+
+Click on EDIT
+
+Set 'Stackdriver Kubernetes Engine Monitoring' to 'Enabled'
+
+Click SAVE.
+
+LEGACY STACKDRIVER SUPPORT:
+
+Both Logging and Monitoring support must be enabled.
+For Logging:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which logging is disabled
+
+Click on EDIT
+
+Set 'Legacy Stackdriver Logging' to 'Enabled'
+
+Click SAVE.
+
+For Monitoring:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which monitoring is disabled
+
+Click on EDIT
+
+Set 'Legacy Stackdriver Monitoring' to 'Enabled'
+
+Click SAVE.
+
+Using Command Line
+
+STACKDRIVER KUBERNETES ENGINE MONITORING SUPPORT (PREFERRED):
+
+To enable Stackdriver Kubernetes Engine Monitoring for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-stackdriver-kubernetes
+
+LEGACY STACKDRIVER SUPPORT:
+
+Both Logging and Monitoring support must be enabled.
+To enable Legacy Stackdriver Logging for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] --zone [COMPUTE_ZONE] --logging-service logging.googleapis.com
+
+To enable Legacy Stackdriver Monitoring for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] --zone [COMPUTE_ZONE] --monitoring-service monitoring.googleapis.com
+
+Impact:
+
+Stackdriver Kubernetes Engine Monitoring and Legacy Stackdriver are incompatible because they have different data models. To move from Legacy Stackdriver to Stackdriver Kubernetes Engine Monitoring, you must manually change a number of your Stackdriver artifacts, including alerting policies, group filters, and log queries. See https://cloud.google.com/monitoring/kubernetes-engine/migration.
+
+Default Value:
+
+Stackdriver Kubernetes Engine monitoring is enabled by default starting in GKE version 1.14; Legacy Stackdriver Logging and Monitoring support is enabled by default for earlier versions."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|5.7.1,CSCv7|6.2,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|1S,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Logging Service: \(.loggingService)\""
+  regex          : "Logging Service"
+  expect         : "Logging Service: logging.googleapis.com/kubernetes"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.7.1 Ensure Stackdriver Kubernetes Logging and Monitoring is Enabled - monitoringService"
+  info           : "Send logs and metrics to a remote aggregator to mitigate the risk of local tampering in the event of a breach.
+
+Rationale:
+
+Exporting logs and metrics to a dedicated, persistent datastore such as Stackdriver ensures availability of audit data following a cluster security event, and provides a central location for analysis of log and metric data collated from multiple sources.
+
+Currently, there are two mutually exclusive variants of Stackdriver available for use with GKE clusters: Legacy Stackdriver Support and Stackdriver Kubernetes Engine Monitoring Support.
+
+Although Stackdriver Kubernetes Engine Monitoring is the preferred option, starting with GKE versions 1.12.7 and 1.13, Legacy Stackdriver is the default option up through GKE version 1.13. The use of either of these services is sufficient to pass the benchmark recommendation.
+
+However, note that as Legacy Stackdriver Support is not getting any improvements and lacks features present in Stackdriver Kubernetes Engine Monitoring, Legacy Stackdriver Support may be deprecated in favour of Stackdriver Kubernetes Engine Monitoring Support in future versions of this benchmark."
+  solution       : "Using Google Cloud Console
+
+STACKDRIVER KUBERNETES ENGINE MONITORING SUPPORT (PREFERRED):
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which Stackdriver Kubernetes Engine Monitoring is disabled
+
+Click on EDIT
+
+Set 'Stackdriver Kubernetes Engine Monitoring' to 'Enabled'
+
+Click SAVE.
+
+LEGACY STACKDRIVER SUPPORT:
+
+Both Logging and Monitoring support must be enabled.
+For Logging:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which logging is disabled
+
+Click on EDIT
+
+Set 'Legacy Stackdriver Logging' to 'Enabled'
+
+Click SAVE.
+
+For Monitoring:
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which monitoring is disabled
+
+Click on EDIT
+
+Set 'Legacy Stackdriver Monitoring' to 'Enabled'
+
+Click SAVE.
+
+Using Command Line
+
+STACKDRIVER KUBERNETES ENGINE MONITORING SUPPORT (PREFERRED):
+
+To enable Stackdriver Kubernetes Engine Monitoring for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-stackdriver-kubernetes
+
+LEGACY STACKDRIVER SUPPORT:
+
+Both Logging and Monitoring support must be enabled.
+To enable Legacy Stackdriver Logging for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] --zone [COMPUTE_ZONE] --logging-service logging.googleapis.com
+
+To enable Legacy Stackdriver Monitoring for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] --zone [COMPUTE_ZONE] --monitoring-service monitoring.googleapis.com
+
+Impact:
+
+Stackdriver Kubernetes Engine Monitoring and Legacy Stackdriver are incompatible because they have different data models. To move from Legacy Stackdriver to Stackdriver Kubernetes Engine Monitoring, you must manually change a number of your Stackdriver artifacts, including alerting policies, group filters, and log queries. See https://cloud.google.com/monitoring/kubernetes-engine/migration.
+
+Default Value:
+
+Stackdriver Kubernetes Engine monitoring is enabled by default starting in GKE version 1.14; Legacy Stackdriver Logging and Monitoring support is enabled by default for earlier versions."
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CIS_Recommendation|5.7.1,CSCv7|6.2,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|1S,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Monitoring Service: \(.monitoringService)\""
+  regex          : "Monitoring Service"
+  expect         : "Monitoring Service: monitoring.googleapis.com/kubernetes"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.8.1 Ensure Basic Authentication using static passwords is Disabled"
+  info           : "Disable Basic Authentication (basic auth) for API server authentication as it uses static passwords which need to be rotated.
+
+Rationale:
+
+Basic Authentication allows a user to authenticate to a Kubernetes cluster with a username and static password which is stored in plaintext (without any encryption). Disabling Basic Authentication will prevent attacks like brute force and credential stuffing. It is recommended to disable Basic Authentication and instead use another authentication method such as OpenID Connect.
+
+GKE manages authentication via gcloud using the OpenID Connect token method, setting up the Kubernetes configuration, getting an access token, and keeping it up to date. This means Basic Authentication using static passwords and Client Certificate authentication, which both require additional management overhead of key management and rotation, are not necessary and should be disabled.
+
+When Basic Authentication is disabled, you will still be able to authenticate to the cluster with other authentication methods, such as OpenID Connect tokens. See also Recommendation 6.8.2 to disable authentication using Client Certificates."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the Kubernetes cluster for which Basic Authentication is currently enabled
+
+Click on EDIT
+
+Set 'Basic authentication' to 'Disabled'
+
+Click SAVE.
+
+Using Command Line
+
+To update an existing cluster and disable Basic Authentication by removing the static password:
+
+gcloud container clusters update [CLUSTER_NAME] \
+    --no-enable-basic-auth
+
+Impact:
+
+Users will no longer be able to authenticate with a static password. You will have to configure and use alternate authentication mechanisms, such as OpenID Connect tokens.
+
+Default Value:
+
+Clusters created from GKE version 1.12 have Basic Authentication and Client Certificate issuance disabled by default."
+  reference      : "800-171|3.5.2,800-53|IA-5.,CIS_Recommendation|5.8.1,CSCv7|16,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|1S,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Master Auth: \(.masterAuth.password and .masterAuth.username)\""
+  regex          : "Master Auth"
+  expect         : "Master Auth: false"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.8.2 Ensure authentication using Client Certificates is Disabled"
+  info        : "Disable Client Certificates, which require certificate rotation, for authentication. Instead, use another authentication method like OpenID Connect.
+
+Rationale:
+
+With Client Certificate authentication, a client presents a certificate that the API server verifies with the specified Certificate Authority. In GKE, Client Certificates are signed by the cluster root Certificate Authority. When retrieved, the Client Certificate is only base64 encoded and not encrypted.
+
+GKE manages authentication via gcloud for you using the OpenID Connect token method, setting up the Kubernetes configuration, getting an access token, and keeping it up to date. This means Basic Authentication using static passwords and Client Certificate authentication, which both require additional management overhead of key management and rotation, are not necessary and should be disabled.
+
+When Client Certificate authentication is disabled, you will still be able to authenticate to the cluster with other authentication methods, such as OpenID Connect tokens. See also Recommendation 6.8.1 to disable authentication using static passwords, known as Basic Authentication.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Currently, there is no way to remove a client certificate from an existing cluster. Thus a new cluster must be created.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Click CREATE CLUSTER
+
+Configure as required and the click on 'Availability, networking, security, and additional features' section
+
+Ensure that the 'Issue a client certificate' checkbox is not ticked
+
+Click CREATE.
+
+Using Command Line
+
+Create a new cluster without a Client Certificate:
+
+gcloud container clusters create [CLUSTER_NAME] \
+ --no-issue-client-certificate
+
+Impact:
+
+Users will no longer be able to authenticate with the pre-provisioned x509 certificate. You will have to configure and use alternate authentication mechanisms, such as OpenID Connect tokens.
+
+Default Value:
+
+Clusters created from GKE version 1.12 have Basic Authentication and Client Certificate issuance disabled by default."
+  reference   : "800-53|IA-5.,CIS_Recommendation|5.8.2,CSCv7|16,LEVEL|1S"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.8.4 Ensure Legacy Authorization (ABAC) is Disabled"
+  info           : "Legacy Authorization, also known as Attribute-Based Access Control (ABAC) has been superseded by Role-Based Access Control (RBAC) and is not under active development. RBAC is the recommended way to manage permissions in Kubernetes.
+
+Rationale:
+
+In Kubernetes, RBAC is used to grant permissions to resources at the cluster and namespace level. RBAC allows you to define roles with rules containing a set of permissions, whilst the legacy authorizer (ABAC) in Kubernetes Engine grants broad, statically defined permissions. As RBAC provides significant security advantages over ABAC, it is recommended option for access control. Where possible, legacy authorization must be disabled for GKE clusters."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select Kubernetes clusters for which Legacy Authorization is enabled
+
+Click EDIT
+
+Set 'Legacy Authorization' to 'Disabled'
+
+Click SAVE.
+
+Using Command Line
+
+To disable Legacy Authorization for an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --no-enable-legacy-authorization
+
+Impact:
+
+Once the cluster has the legacy authorizer disabled, you must grant your user the ability to create authorization roles using RBAC to ensure that your role-based access control permissions take effect.
+
+Default Value:
+
+Kubernetes Engine clusters running GKE version 1.8 and later disable the legacy authorization system by default, and thus role-based access control permissions take effect with no special action required."
+  reference      : "800-171|3.5.2,800-53|IA-5.,CIS_Recommendation|5.8.4,CSCv7|16,CSCv7|4,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|1S,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Legacy ABAC Enabled: \(.legacyAbac.enabled)\""
+  regex          : "Legacy ABAC Enabled:"
+  not_expect     : "Legacy ABAC Enabled: true"
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.10.1 Ensure Kubernetes Web UI is Disabled"
+  info           : "The Kubernetes Web UI (Dashboard) has been a historical source of vulnerability and should only be deployed when necessary.
+
+Rationale:
+
+You should disable the Kubernetes Web UI (Dashboard) when running on Kubernetes Engine. The Kubernetes Web UI is backed by a highly privileged Kubernetes Service Account.
+
+The Google Cloud Console provides all the required functionality of the Kubernetes Web UI and leverages Cloud IAM to restrict user access to sensitive cluster controls and settings."
+  solution       : "Using Google Cloud Console
+
+Go to Kubernetes GCP Engine by visiting https://console.cloud.google.com/kubernetes/list
+
+Select the Kubernetes cluster for which the web UI is enabled
+
+Click EDIT
+
+Click on the 'Add-ons' heading to expand, and set 'Kubernetes dashboard' to 'Disabled'
+
+Click SAVE.
+
+Using Command Line
+
+To disable the Kubernetes Dashboard on an existing cluster, run the following command:
+
+gcloud container clusters update [CLUSTER_NAME] \
+  --zone [ZONE] \
+  --update-addons=KubernetesDashboard=DISABLED
+
+Impact:
+
+Users will be required to manage cluster resources using the Google Cloud Console or the command line. These require appropriate permissions. To use the command line, this requires the installation of the command line client, kubectl, on the user's device (this is already included in Cloud Shell) and knowledge of command line operations.
+
+Default Value:
+
+The Kubernetes web UI (Dashboard) does not have admin access by default in GKE 1.7 and higher. The Kubernetes web UI is disabled by default in GKE 1.10 and higher. In GKE 1.15 and higher, the Kubernetes web UI add-on KubernetesDashboard is no longer supported as a managed add-on."
+  reference      : "800-171|3.4.6,800-171|3.4.7,800-53|CM-7b.,CIS_Recommendation|5.10.1,CN-L3|7.1.3.5(c),CN-L3|7.1.3.7(d),CN-L3|8.1.4.4(b),CSCv7|2.2,CSCv7|18.4,CSF|PR.IP-1,CSF|PR.PT-3,ITSG-33|CM-7a.,LEVEL|1S,NIAv2|SS13b,NIAv2|SS14a,NIAv2|SS14c,QCSC-v1|3.2,SWIFT-CSCv1|2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Kubernetes Dashboard - Disabled: \(.addonsConfig.kubernetesDashboard.disabled)\""
+  regex          : "Kubernetes Dashboard - Disabled"
+  expect         : "Kubernetes Dashboard - Disabled: true"
+  match_all      : YES
+</custom_item>
+
+<custom_item>
+  type           : REST_API
+  description    : "5.10.2 Ensure that Alpha clusters are not used for production workloads"
+  info           : "Alpha clusters are not covered by an SLA and are not production-ready.
+
+Rationale:
+
+Alpha clusters are designed for early adopters to experiment with workloads that take advantage of new features before those features are production-ready. They have all Kubernetes API features enabled, but are not covered by the GKE SLA, do not receive security updates, have node auto-upgrade and node auto-repair disabled, and cannot be upgraded. They are also automatically deleted after 30 days."
+  solution       : "Alpha features cannot be disabled. To remediate, a new cluster must be created.
+
+Using Google Cloud Console
+
+Go to Kubernetes Engine by visiting https://console.cloud.google.com/kubernetes/
+
+Click CREATE CLUSTER
+
+Unless Node Auto-Upgrade and Node Auto-Repair are disabled, under 'Availability, networking, security, and additional features', the option 'Enable Kubernetes alpha features in this cluster' will not be available. Ensure this feature is not checked
+
+Click CREATE.
+
+Using Command Line:
+Upon creating a new cluster
+
+gcloud container clusters create [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE]
+
+Do not use the --enable-kubernetes-alpha argument.
+
+Impact:
+
+Users and workloads will not be able to take advantage of features included within Alpha clusters.
+
+Default Value:
+
+By default, Kubernetes Alpha features are disabled."
+  reference      : "800-171|3.4.8,800-53|CM-7(4),CIS_Recommendation|5.10.2,CSCv7|18.9,CSF|PR.IP-1,CSF|PR.PT-3,ISO/IEC-27001|A.12.6.2,ITSG-33|CM-7,LEVEL|1S,NIAv2|SS13a,QCSC-v1|3.2,SWIFT-CSCv1|2.3,TBA-FIISB|44.2.2,TBA-FIISB|49.2.3"
+  see_also       : "https://workbench.cisecurity.org/files/2764"
+  request        : "listContainerClusters"
+  json_transform : ".projects[] | .projectNumber as $projectNumber | .projectId as $projectId | .value.clusters[] | \"Project Number: \($projectNumber), Project ID: \($projectId), Cluster Name: \(.name), Enable Kubernetes Alpha: \(.enableKubernetesAlpha)\""
+  regex          : "Enable Kubernetes Alpha"
+  expect         : "Enable Kubernetes Alpha: (null|false)"
+  match_all      : YES
+</custom_item>
+
+<report type:"WARNING">
+  description : "5.10.3 Ensure Pod Security Policy is Enabled and set as appropriate"
+  info        : "Pod Security Policy should be used to prevent privileged containers where possible and enforce namespace and workload configurations.
+
+Rationale:
+
+A Pod Security Policy is a cluster-level resource that controls security sensitive aspects of the pod specification. A PodSecurityPolicy object defines a set of conditions that a pod must run with in order to be accepted into the system, as well as defaults for the related fields. When a request to create or update a Pod does not meet the conditions in the Pod Security Policy, that request is rejected and an error is returned. The Pod Security Policy admission controller validates requests against available Pod Security Policies.
+
+PodSecurityPolicies specify a list of restrictions, requirements, and defaults for Pods created under the policy. See further details on recommended policies in Recommendation section 5.2.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Using Google Cloud Console
+
+There is no means of enabling the Pod Security Policy Admission controller on an existing or new cluster from the console.
+
+Using Command Line
+
+To enable Pod Security Policy for an existing cluster, run the following command:
+
+gcloud beta container clusters update [CLUSTER_NAME] \
+  --zone [COMPUTE_ZONE] \
+  --enable-pod-security-policy
+
+Impact:
+
+If you enable the Pod Security Policy controller without first defining and authorizing any actual policies, no users, controllers, or service accounts can create or update Pods. If you are working with an existing cluster, you should define and authorize policies before enabling the controller.
+
+Default Value:
+
+By default, Pod Security Policy is disabled."
+  reference   : "800-53|AC-6.,CIS_Recommendation|5.10.3,CSCv7|5.1,CSCv7|5.4,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+<report type:"WARNING">
+  description : "5.10.6 Enable Cloud Security Command Center (Cloud SCC)"
+  info        : "Enable Cloud Security Command Center (Cloud SCC) to provide a centralized view of security for your GKE clusters.
+
+Rationale:
+
+Cloud Security Command Center (Cloud SCC) is the canonical security and data risk database for GCP. Cloud SCC enables you to understand your security and data attack surface by providing asset inventory, discovery, search, and management.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Follow the instructions at https://cloud.google.com/security-command-center/docs/quickstart-scc-setup.
+
+Impact:
+
+None.
+
+Default Value:
+
+By default, Cloud SCC is disabled."
+  reference   : "800-53|CM-6b.,CIS_Recommendation|5.10.6,CSCv7|10,CSCv7|11,CSCv7|12,CSCv7|13,CSCv7|14,CSCv7|16,CSCv7|18,CSCv7|2,CSCv7|3,CSCv7|4,CSCv7|5,CSCv7|6,CSCv7|9,LEVEL|1NS"
+  see_also    : "https://workbench.cisecurity.org/files/2764"
+</report>
+
+</check_type>

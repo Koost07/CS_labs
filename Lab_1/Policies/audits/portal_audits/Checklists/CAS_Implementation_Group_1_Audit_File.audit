@@ -1,0 +1,932 @@
+#
+# This script is Copyright (C) 2004-2020 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+#
+# $Revision: 1.0 $
+# $Date: 2020/10/05 $
+#
+# Description   : CAS Implementation Group 1 Audit File 1.0.0
+#
+#
+# NOTE        : CAS Implementation Group 1 Audit File 1.0.0
+#
+#<ui_metadata>
+#<display_name>CAS Implementation Group 1 Audit File</display_name>
+#<spec>
+#  <type>TNS</type>
+#  <name>CAS Implementation Group 1 Audit File</name>
+#  <version>1.0.1</version>
+#  <link>https://controls-assessment-specification.readthedocs.io/en/latest</link>
+#</spec>
+#<labels>unix</labels>
+#<benchmark_refs>CSCv7</benchmark_refs>
+#<variables>
+#  <variable>
+#    <name>Attesting_User</name>
+#    <default>Attesting User</default>
+#    <description> Attesting user to the answers provided for this report.</description>
+#    <info>Attesting User</info>
+#  </variable>
+
+
+#  <variable>
+#    <name>1_4_Answer</name>
+#    <description>1.4 - Does  a policy exist detailing how assets  are added or removed ?</description>
+#    <info>Implementation Group 1 - Does the organization have an established policy or procedure detailing how assets/devices are added or removed from inventory? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>1_4_Support</name>
+#    <description>1.4: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>1_6_Support</name>
+#    <description>1.6: Input number of days</description>
+#    <info>Input the timeframe in days for removing/updating assets</info>
+#    <default>999</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>1_6_Answer</name>
+#    <description>1.6 - Input the  timeframe in days for removing/updating assets</description>
+#    <info>Implementation Group 1 - Does the organization have an established policy or procedure specifying a timeframe for which assets/devices are removed from inventory or inventory is updated? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>2_1_2_Answer</name>
+#    <description>2.1(b)- Is there a policy to remediate software/unauthorized app/patching?</description>
+#    <info>Implementation Group 1 - Does the Organization have an established policy defining a timeframe to to remediate software issues, such as removing unauthorized applications and/or patching out of date/unsupported software? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>2_1_2_Support</name>
+#    <description>2.1(b): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>2_1_1_Answer</name>
+#    <description>2.1(a) - Does the organization have a list of currently approved software?</description>
+#    <info>Implementation Group 1 - Does the Organization have a current list of approved software? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>2_1_1_Support</name>
+#    <description>2.1(a): Location of List of Approved Software</description>
+#    <info>Input location of List of Approved Software</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_2_Support_1</name>
+#    <description>3.4(b): Location of the list of endpoints that have an exception</description>
+#    <info>Input location of endpoint list</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_2_Answer</name>
+#    <description>3.4(b) - Does the organization have a policy for patching exceptions?</description>
+#    <info>Implementation Group 1 - Does the organization have any exceptions in place for any endpoint devices as it applies to patches being up to date? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_3_Support</name>
+#    <description>3.4(c): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_3_Answer</name>
+#    <description>3.4(c) - Does the organization have a policy for patching timeframes?</description>
+#    <info>Implementation Group 1 - OPTIONAL: Does the organization have a policy in place that dictates the required timeframe that patches must be applied to end point devices (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_2_Support_2</name>
+#    <description>3.4(b): Location of the exception policy</description>
+#    <info>Input location of of the exception policy</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_1_Answer</name>
+#    <description>3.4(a) -Does the organization have an OS update/patching policy?</description>
+#    <info>Implementation Group 1 - Does the organization have a policy in place which dictates how Operating Systems are kept up to date? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_4_1_Support</name>
+#    <description>3.4(a): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_6_2_Support_1</name>
+#    <description>3.6(b): Location of the list of endpoints that have an exception</description>
+#    <info>Input location of endpoint list</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_6_1_Answer</name>
+#    <description>3.6(a) - Does the organization have a software update policy?</description>
+#    <info>Does the organization have a policy in place which dictates how Authorized Software is kept up to date? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_6_1_Support</name>
+#    <description>3.6(a): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_6_2_Answer</name>
+#    <description>3.6(b) - Does the organization have an exception policy for endpoints?</description>
+#    <info>Implementation Group 1 - Does the organization have any exceptions in place for any endpoint devices as it applies to software patches being up to date? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>3_6_2_Support_2</name>
+#    <description>3.6(b): Location of the exception policy</description>
+#    <info>Input location of of the exception policy</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>4_2_Answer</name>
+#    <description>4.2 - Does the organization have a default password policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined password policy? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>4_2_Support</name>
+#    <description>4.2: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>4_3_Answer</name>
+#    <description>4.3 - Does each admin have their own separate admin level account?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined Administrative account on each system where elevated access is required, for each user accessing that account (no shared accounts, each user is required to have their own Administrative account)? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>5_1_Answer</name>
+#    <description>5.1 - Does the organization have a define secure configuration policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a documented secure configuration for each of their device types, applications/software? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>5_1_Support</name>
+#    <description>5.1: Location of the Secure Configuration documentation</description>
+#    <info>Input location of Secure Configuration documentation</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>6_2_2_Answer</name>
+#    <description>6.2(b) - Has the organization checked each endpoint to verify logging?</description>
+#    <info>Implementation Group 1 - Has the organization checked each endpoint/ log collection system to determine if devices are properly configured? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>6_2_1_Support</name>
+#    <description>6.2(a): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>6_2_1_Answer</name>
+#    <description>6.2(a) - Does the organization have an audit log policy for each endpoint?</description>
+#    <info>Implementation Group 1 - Does the organization maintain a logging policy for each endpoint? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>7_7_Support</name>
+#    <description>7.7: List of DNS Filtering Services in use</description>
+#    <info>Input location of List of services in use</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>7_7_Answer</name>
+#    <description>7.7 - Is the organization using  DNS Filtering Services?</description>
+#    <info>Implementation Group 1 - Is the Organization utilizing DNS Filtering Services? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>8_4_Answer</name>
+#    <description>8.4 - Is  Antimalware configured to scan removable media when inserted?</description>
+#    <info>Implementation Group 1 - Are systems with Anti-Malware software installed, configured to scan removable media devices for malware when they are inserted/connected to the host machine? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>8_5_Answer</name>
+#    <description>8.5 - Are devices configured to Not Auto Run content when inserted?</description>
+#    <info>Implementation Group 1 - Are systems configured to NOT automatically run content when a remote device is attached to the host? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>10_1_Answer</name>
+#    <description>10.1 - Does the organization have a defined backup policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined backup policy which states that systems are backed-up at a regular interval? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>10_1_Support</name>
+#    <description>10.1: Location of Policy or Policy Statement</description>
+#    <info>Input location of List of services in use</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>10_2_Answer</name>
+#    <description>10.2 - Are Key Systems being backed up on a regular basis?</description>
+#    <info>Implementation Group 1 - Are key systems being backed up on a regular basis? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>10_4_Answer</name>
+#    <description>10.4 - Are backups protected by physical security, encryption or offsite?</description>
+#    <info>Implementation Group 1 - Are backups protected via physical security or encryption when they are stored or moved across the network? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>10_5_Answer</name>
+#    <description>10.5 - Does the organization store at least one full backup offline?</description>
+#    <info>Implementation Group 1 - Does the organization store at least one full backup offline (that is not accessible from the network)? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_1_Support</name>
+#    <description>12.1: Location of the diagram/plan</description>
+#    <info>Input location of the diagram/plan</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_1_Answer</name>
+#    <description>12.1 - Does the organization have a network diagram of boundary devices?</description>
+#    <info>Implementation Group 1 - Does the Organization have a network diagram defining all the boundary devices as defined above? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_4_1_Answer</name>
+#    <description>12.4(a) - Does the organization have a list of firewalls and port filters?</description>
+#    <info>Implementation Group 1 - Does the Organization maintain a list/document of devices known to be firewalls or port filters? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_4_1_Support</name>
+#    <description>12.4(a): Location of the list/document</description>
+#    <info>Input location of the list/document</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_4_2_Support</name>
+#    <description>12.4(b): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>12_4_2_Answer</name>
+#    <description>12.4(b) - Does the organization have a defined network traffic policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined network traffic policy for each subnet? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_1_Support</name>
+#    <description>13.1: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_1_Answer</name>
+#    <description>13.1 - Does the organization have a Sensitive Info Classification Policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined classification policy? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_2_Answer</name>
+#    <description>13.2 - Does the organization have a defined Access Frequency Policy?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined access frequency policy? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_2_Support</name>
+#    <description>13.2: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_6_Answer</name>
+#    <description>13.6 -Does the organization have a encryption policy for Mobile Devices?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined classification policy? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>13_6_Support</name>
+#    <description>13.6: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>14_6_Answer</name>
+#    <description>14.6 - Does the organization have a defined configuration policy for ACLs?</description>
+#    <info>Implementation Group 1 - Does the Organization have a defined configuration policy? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>14_6_Support</name>
+#    <description>14.6: Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>16_8_1_Support</name>
+#    <description>16.8(a): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>16_8_1_Answer</name>
+#    <description>16.8(a) - Does the organization have a list of all the business roles?</description>
+#    <info>Implementation Group 1 - Does the Organization have a list of all business roles? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>16_8_2_Support</name>
+#    <description>16.8(b): Location of Policy or Policy Statement</description>
+#    <info>Input location of Policy or Policy Statement</info>
+#    <default>None</default>
+#  </variable>
+
+
+#  <variable>
+#    <name>16_8_2_Answer</name>
+#    <description>16.8(b) - Does the organization have a list of all computer/app accounts?</description>
+#    <info>Implementation Group 1 - Does the Organization have a list of all computer and applications accounts? (Yes/No)</info>
+#    <default>No</default>
+#  </variable>
+
+
+#</variables>
+#</ui_metadata>
+
+<check_type:"Unix">
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 1 (1.4) Maintain Detailed Asset Inventory"
+      info           : "Implementation Group 1 - Does the organization have an established policy or procedure detailing how assets/devices are added or removed from inventory?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|1.4"
+# Note: Variable @1_4_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @1_4_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nPolicy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 1 (1.6) Ensure that unauthorized assets are removed, quarantined or the inventory is updated"
+      info           : "Implementation Group 1 - Does the organization have an established policy or procedure specifying a timeframe for which assets/devices are removed from inventory or inventory is updated?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|1.6"
+# Note: Variable @1_6_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @1_6_Support@ replaced with "999" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nTimeframe for removing/updating assets (days): 999'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 2 (2.1(b)) Maintain and Inventory of Authorized Software"
+      info           : "Implementation Group 1 - Does the Organization have an established policy defining a timeframe to to remediate software issues, such as removing unauthorized applications and/or patching out of date/unsupported software?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|2.1"
+# Note: Variable @2_1_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @2_1_2_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 2 (2.1(a)) Maintain and Inventory of Authorized Software"
+      info           : "Implementation Group 1 - Does the Organization have a current list of approved software?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|2.1"
+# Note: Variable @2_1_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @2_1_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of List of Approved Software: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 3 (3.4(b)) Deploy Automated Operating System Patch Management Tools"
+      info           : "Does the organization have any exceptions in place for any endpoint devices as it applies to patches being up to date?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|3.4"
+# Note: Variable @3_4_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @3_4_2_Support_1@ replaced with "None" in field "cmd".
+# Note: Variable @3_4_2_Support_2@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of list of endpoints that have an exception: None\\nLocation of exception policy: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 3 (3.4(c)) Deploy Automated Operating System Patch Management Tools"
+      info           : "OPTIONAL: Does the organization have a policy in place that dictates the required timeframe that patches must be applied to end point devices?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|3.4"
+# Note: Variable @3_4_3_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @3_4_3_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 3 (3.4(a)) Deploy Automated Operating System Patch Management Tools"
+      info           : "Implementation Group 1 - Does the organization have a policy in place which dictates how Operating Systems are kept up to date?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|3.4"
+# Note: Variable @3_4_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @3_4_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 3 (3.6(a)) Deploy Automated Software Patch Management Tools"
+      info           : "Does the organization have a policy in place which dictates how Authorized Software is kept up to date?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|3.6"
+# Note: Variable @3_6_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @3_6_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 3 (3.6(b)) Deploy Automated Software Patch Management Tools"
+      info           : "Does the organization have a policy in place which dictates how Authorized Software is kept up to date?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|3.6"
+# Note: Variable @3_6_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @3_6_2_Support_1@ replaced with "None" in field "cmd".
+# Note: Variable @3_6_2_Support_2@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of list of endpoints that have an exception: None\\nLocation of exception policy: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 4 (4.2) Change Default Passwords"
+      info           : "Implementation Group 1 - Does the Organization have a defined password policy?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|4.2"
+# Note: Variable @4_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @4_2_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 4 (4.3) Ensure the Use of Dedicated Administrative Accounts"
+      info           : "Implementation Group 1 - Does the Organization have a defined Administrative account on each system where elevated access is required, for each user accessing that account (no shared accounts, each user is required to have their own Administrative account)?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|4.3"
+# Note: Variable @4_3_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 5 (5.1) Establish Secure Configurations"
+      info           : "Implementation Group 1 - Does the Organization have a documented secure configuration for each of their device types, applications/software?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|5.1"
+# Note: Variable @5_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @5_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Secure Configuration documentation: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 6 (6.2(b)) Activate Audit Logging"
+      info           : "Implementation Group 1 - Has the organization checked each endpoint/ log collection system to determine if devices are properly configured?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|6.2"
+# Note: Variable @6_2_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 6 (6.2(a)) Activate Audit Logging"
+      info           : "Implementation Group 1 - Does the organization maintain a logging policy for each endpoint?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|6.2"
+# Note: Variable @6_2_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @6_2_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 7 (7.7) Use of DNS Filtering Services"
+      info           : "Implementation Group 1 - Is the Organization utilizing DNS Filtering Services?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|7.7"
+# Note: Variable @7_7_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @7_7_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of list of services in use: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 8 (8.4) Configure Anti-Malware Scanning of Removable Media"
+      info           : "Does your organization configure devices so that they automatically conduct an anti-malware scan of removable media when inserted or connected?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|8.4"
+# Note: Variable @8_4_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 8 (8.5) Configure Devices to Not Auto Run Content"
+      info           : "Implementation Group 1 - Are systems configured to NOT automatically run content when a remote device is attached to the host?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|8.5"
+# Note: Variable @8_5_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 10 (10.1) Ensure Regular Automated Backups"
+      info           : "Implementation Group 1 - Does the Organization have a defined backup policy which states that systems are backed-up at a regular interval?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|10.1"
+# Note: Variable @10_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @10_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 10 (10.2) Perform Complete System Backups"
+      info           : "Implementation Group 1 - Are key systems being backed up on a regular basis?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|10.2"
+# Note: Variable @10_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 10 (10.4) Protect Backups"
+      info           : "Implementation Group 1 - Are backups protected via physical security or encryption when they are stored or moved across the network?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|10.4"
+# Note: Variable @10_4_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 10 (10.5) Ensure All Backups Have at Least One Offline Backup Destination"
+      info           : "Implementation Group 1 - Does the organization store at least one full backup offline (that is not accessible from the network)?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|10.5"
+# Note: Variable @10_5_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 12 (12.1) Maintain an Inventory of Network Boundaries"
+      info           : "Implementation Group 1 - Does the Organization have a network diagram defining all the boundary devices as defined above?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|12.1"
+# Note: Variable @12_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @12_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of diagram/plan: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 12 (12.4(a)) Deny Communications Over Unauthorized Ports"
+      info           : "Implementation Group 1 - Does the Organization maintain a list/document of devices known to be firewalls or port filters?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|12.4"
+# Note: Variable @12_4_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @12_4_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of list/document: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 12 (12.4(b)) Deny Communications Over Unauthorized Ports"
+      info           : "Implementation Group 1 - Does the Organization have a defined network traffic policy for each subnet?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|12.4"
+# Note: Variable @12_4_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @12_4_2_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 13 (13.1) Maintain an Inventory of Sensitive Information"
+      info           : "Implementation Group 1 - Does the Organization have a defined classification policy?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|13.1"
+# Note: Variable @13_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @13_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 13 (13.2) Remove Sensitive Data or Systems Not Regularly Accessed by Organization"
+      info           : "Implementation Group 1 - Does the Organization have a defined access frequency policy?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|13.2"
+# Note: Variable @13_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @13_2_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 13 (13.6) Encrypt Mobile Device Data"
+      info           : "Implementation Group 1 - Does the Organization have a defined classification policy?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|13.6"
+# Note: Variable @13_6_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @13_6_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 14 (14.6) Protect Information Through Access Control Lists"
+      info           : "Implementation Group 1 - Does the Organization have a defined configuration policy?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|14.6"
+# Note: Variable @14_6_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @14_6_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 16 (16.8(a)) Disable Any Unassociated Accounts"
+      info           : "Implementation Group 1 - Does the Organization have a list of all business roles?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|16.8"
+# Note: Variable @16_8_1_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @16_8_1_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+    <custom_item>
+      type           : CMD_EXEC
+      description    : "CIS Control 16 (16.8(b)) Disable Any Unassociated Accounts"
+      info           : "Implementation Group 1 - Does the Organization have a list of all computer and applications accounts?"
+      see_also       : "https://controls-assessment-specification.readthedocs.io/en/latest"
+      reference      : "CSCv7|16.8"
+# Note: Variable @16_8_2_Answer@ replaced with "No" in field "cmd".
+# Note: Variable @16_8_2_Support@ replaced with "None" in field "cmd".
+# Note: Variable @Attesting_User@ replaced with "Attesting User" in field "cmd".
+      cmd            : "printf 'No - Attesting User\\nLocation of Policy or Policy Statement: None'"
+      expect         : "^[Yy]es - .*"
+      dont_echo_cmd  : YES
+    </custom_item>
+
+
+</check_type>

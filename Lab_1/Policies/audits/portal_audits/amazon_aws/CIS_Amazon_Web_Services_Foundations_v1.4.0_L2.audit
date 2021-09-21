@@ -1,0 +1,1977 @@
+#
+# This script is Copyright (C) 2004-2021 and is owned by Tenable, Inc. or an Affiliate thereof.
+#
+# This script is released under the Tenable Subscription License and
+# may not be used from within scripts released under another license
+# without authorization from Tenable, Inc.
+#
+# See the following licenses for details:
+#
+# http://static.tenable.com/prod_docs/Nessus_6_SLA_and_Subscription_Agreement.pdf
+#
+# @PROFESSIONALFEED@
+# $Revision: 1.0 $
+# $Date: 2021/07/12 $
+#
+# description : This document implements the security configuration as recommended by the
+#               CIS Amazon Web Services Foundations Benchmark
+#
+#<ui_metadata>
+#<display_name>CIS Amazon Web Services Foundations L2 1.4.0</display_name>
+#<spec>
+#  <type>CIS</type>
+#  <name>CIS Amazon Web Services Foundations L2</name>
+#  <version>1.4.0</version>
+#  <link>https://workbench.cisecurity.org/files/3416</link>
+#</spec>
+#<labels>amazon_aws,amazon,aws,security,cis</labels>
+#<benchmark_refs>LEVEL,CSCv6,CSCv7,CCE,CIS_Recommendation</benchmark_refs>
+#<variables>
+#  <variable>
+#    <name>ALARM_ARN</name>
+#    <default>arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark</default>
+#    <description>4.x - SNS subscription ARN</description>
+#    <info>The SNS TopicARN used by the Metric Filter Alarm</info>
+#  </variable>
+#  <variable>
+#    <name>CONSOLE_METRIC_NAME</name>
+#    <default>ManagementConsoleAuthFailures</default>
+#    <description>4.6 - Cloudtrail API MetricName</description>
+#    <info>Value of MetricName for the Cloudtrail Metric Filter</info>
+#  </variable>
+#  <variable>
+#    <name>CMK_METRIC_NAME</name>
+#    <default>DisableOrDeleteCMKChanges</default>
+#    <description>4.7 - Cloudtrail API MetricName</description>
+#    <info>Value of MetricName for the Cloudtrail Metric Filter</info>
+#  </variable>
+#  <variable>
+#    <name>AWS_CONFIG_METRIC_NAME</name>
+#    <default>AWSConfigChanges</default>
+#    <description>4.9 - Cloudtrail API MetricName</description>
+#    <info>Value of MetricName for the Cloudtrail Metric Filter</info>
+#  </variable>
+#  <variable>
+#    <name>SECURITY_GROUP_METRIC_NAME</name>
+#    <default>SecurityGroupChanges</default>
+#    <description>4.10 - Cloudtrail API MetricName</description>
+#    <info>Value of MetricName for the Cloudtrail Metric Filter</info>
+#  </variable>
+#  <variable>
+#    <name>NACL_METRIC_NAME</name>
+#    <default>NetworkACLChanges</default>
+#    <description>4.11 - Cloudtrail API MetricName</description>
+#    <info>Value of MetricName for the Cloudtrail Metric Filter</info>
+#  </variable>
+#  <variable>
+#    <name>S3_BUCKET_NAME</name>
+#    <default>S3_BUCKET_NAME</default>
+#    <description>Your S3 Amazon bucket name.</description>
+#    <info>2.1.2 - S3 Bucket Name</info>
+#  </variable>
+#</variables>
+#</ui_metadata>
+
+<check_type:"amazon_aws">
+
+<custom_item>
+  type        : IAM
+  description : "1.6 Ensure hardware MFA is enabled for the 'root' user account"
+  info        : "The 'root' user account is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a user name and password. With MFA enabled, when a user signs in to an AWS website, they will be prompted for their user name and password as well as for an authentication code from their AWS MFA device. For Level 2, it is recommended that the 'root' user account be protected with a hardware MFA.
+
+Rationale:
+
+A hardware MFA has a smaller attack surface than a virtual MFA. For example, a hardware MFA does not suffer the attack surface introduced by the mobile smartphone on which a virtual MFA resides.
+
+Note: Using hardware MFA for many, many AWS accounts may create a logistical device management issue. If this is the case, consider implementing this Level 2 recommendation selectively to the highest security AWS accounts and the Level 1 recommendation applied to the remaining accounts."
+  solution    : "Perform the following to establish a hardware MFA for the 'root' user account:
+
+Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam/.
+Note: to manage MFA devices for the AWS 'root' user account, you must use your 'root' account credentials to sign in to AWS. You cannot manage MFA devices for the 'root' account using other credentials.
+
+Choose Dashboard , and under Security Status , expand Activate MFA on your root account.
+
+Choose Activate MFA
+
+In the wizard, choose A hardware MFA device and then choose Next Step .
+
+In the Serial Number box, enter the serial number that is found on the back of the MFA device.
+
+In the Authentication Code 1 box, enter the six-digit number displayed by the MFA device. You might need to press the button on the front of the device to display the number.
+
+Wait 30 seconds while the device refreshes the code, and then enter the next six-digit number into the Authentication Code 2 box. You might need to press the button on the front of the device again to display the second number.
+
+Choose Next Step . The MFA device is now associated with the AWS account. The next time you use your AWS account credentials to sign in, you must type a code from the hardware MFA device.
+
+Remediation for this recommendation is not available through AWS CLI."
+  reference   : "800-171|3.5.2,800-53|IA-5(11),CCE|CCE-78911-5,CIS_Recommendation|1.6,CN-L3|7.1.3.1(f),CSCv7|4.5,CSF|PR.AC-1,ITSG-33|IA-5,LEVEL|2A,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2,SWIFT-CSCv1|4.2,SWIFT-CSCv1|5.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "ListVirtualMFADevices"
+  xsl_stmt    : "<xsl:template match=\"/\">
+  <xsl:for-each select=\"//iam:ListVirtualMFADevicesResult/iam:VirtualMFADevices/iam:member\">
+    <xsl:choose>
+      <xsl:when test=\"iam:SerialNumber\">
+        <xsl:variable name=\"serial\" select=\"iam:SerialNumber\" />
+        <xsl:if test=\"contains($serial, 'root-account-mfa-device')\">
+          Virtual Root MFA device found: <xsl:value-of select=\"iam:SerialNumber\"/><xsl:text>&#10;</xsl:text>
+        </xsl:if>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>No virtual MFA devices found for root user</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:for-each>
+</xsl:template>"
+  not_expect  : "Virtual Root MFA Device Found: .*"
+</custom_item>
+
+<custom_item>
+  type        : EC2
+  description : "1.18 Ensure IAM instance roles are used for AWS resource access from instances"
+  info        : "AWS access from within AWS instances can be done by either encoding AWS keys into AWS API calls or by assigning the instance to a role which has an appropriate permissions policy for the required access. 'AWS Access' means accessing the APIs of AWS in order to access AWS resources or manage AWS account resources.
+
+Rationale:
+
+AWS IAM roles reduce the risks associated with sharing and rotating credentials that can be used outside of AWS itself. If credentials are compromised, they can be used from outside of the AWS account they give access to. In contrast, in order to leverage role permissions an attacker would need to gain and maintain access to a specific instance to use the privileges associated with it.
+
+Additionally, if credentials are encoded into compiled applications or other hard to change mechanisms, then they are even more unlikely to be properly rotated due to service disruption risks. As time goes on, credentials that cannot be rotated are more likely to be known by an increasing number of individuals who no longer work for the organization owning the credentials.
+
+NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+  solution    : "IAM roles can only be associated at the launch of an instance. To remediate an instance to add it to a role you must create a new instance.
+If the instance has no external dependencies on its current private ip or public addresses are elastic IPs:
+
+In AWS IAM create a new role. Assign a permissions policy if needed permissions are already known.
+
+In the AWS console launch a new instance with identical settings to the existing instance, and ensure that the newly created role is selected.
+
+Shutdown both the existing instance and the new instance.
+
+Detach disks from both instances.
+
+Attach the existing instance disks to the new instance.
+
+Boot the new instance and you should have the same machine, but with the associated role.
+
+Note: if your environment has dependencies on a dynamically assigned PRIVATE IP address you can create an AMI from the existing instance, destroy the old one and then when launching from the AMI, manually assign the previous private IP address.
+**Note: **if your environment has dependencies on a dynamically assigned PUBLIC IP address there is not a way ensure the address is retained and assign an instance role. Dependencies on dynamically assigned public IP addresses are a bad practice and, if possible, you may wish to rebuild the instance with a new elastic IP address and make the investment to remediate affected systems while assigning the system to a role."
+  reference   : "800-171|3.1.1,800-53|AC-3(7),CIS_Recommendation|1.18,CN-L3|7.1.2.2(g),CN-L3|7.1.3.2(c),CSCv6|19,CSCv7|19,CSF|PR.AC-4,CSF|PR.PT-3,ISO/IEC-27001|A.9.4.1,ISO/IEC-27001|A.9.4.5,ITSG-33|AC-3,LEVEL|2M,NESA|T4.2.1,NESA|T5.4.4,NESA|T5.4.5,NESA|T5.5.4,NESA|T5.6.1,NESA|T7.5.2,NESA|T7.5.3,NIAv2|AM3,NIAv2|SS29,QCSC-v1|3.2,QCSC-v1|5.2.2,QCSC-v1|13.2,TBA-FIISB|31.1"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeInstances"
+  xsl_stmt    : "<xsl:template match=\"/\">
+  <xsl:for-each select=\"//ec2:DescribeInstancesResponse\">
+    <xsl:for-each select=\"ec2:reservationSet\">
+      <xsl:for-each select=\"ec2:item/ec2:instancesSet/ec2:item\">
+        <xsl:choose>
+          <xsl:when test=\"ec2:iamInstanceProfile/ec2:arn\">
+            <xsl:text>IAM role </xsl:text><xsl:value-of select=\"ec2:iamInstanceProfile/ec2:arn\"/><xsl:text> found for EC2 instance </xsl:text><xsl:value-of select=\"ec2:instanceId\" /><xsl:text> (instance is </xsl:text><xsl:value-of select=\"ec2:instanceState/ec2:name\" /><xsl:text>)</xsl:text><xsl:text>&#10;</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>IAM role not found for EC2 instance </xsl:text><xsl:value-of select=\"ec2:instanceId\" /><xsl:text> (instance is </xsl:text><xsl:value-of select=\"ec2:instanceState/ec2:name\" /><xsl:text>)</xsl:text><xsl:text>&#10;</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:for-each>
+    </xsl:for-each>
+  </xsl:for-each>
+</xsl:template>"
+  regex       : "IAM role .*$"
+  not_expect  : "IAM role not found .*$"
+  severity    : MEDIUM
+</custom_item>
+
+<report type:"WARNING">
+  description : "1.21 Ensure IAM users are managed centrally via identity federation or AWS Organizations for multi-account environments"
+  info        : "In multi-account environments, IAM user centralization facilitates greater user control. User access beyond the initial account is then provided via role assumption. Centralization of users can be accomplished through federation with an external identity provider or through the use of AWS Organizations.
+
+Rationale:
+
+Centralizing IAM user management to a single identity store reduces complexity and thus the likelihood of access management errors.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "The remediation procedure will vary based on the individual organization's implementation of identity federation and/or AWS Organizations with the acceptance criteria that no non-service IAM users, and non-root accounts, are present outside the account providing centralized IAM user management."
+  reference   : "CSCv7|16.2,CSCv8|5.6,LEVEL|2M,CIS_Recommendation|1.21,800-53|IA-5"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<report type:"WARNING">
+  description : "2.1.1 Ensure all S3 buckets employ encryption-at-rest"
+  info        : "Amazon S3 provides a variety of no, or low, cost encryption options to protect data at rest.
+
+Rationale:
+
+Encrypting data at rest reduces the likelihood that it is unintentionally exposed and can nullify the impact of disclosure if the encryption remains unbroken.
+
+Impact:
+
+Amazon S3 buckets with default bucket encryption using SSE-KMS cannot be used as destination buckets for Amazon S3 server access logging. Only SSE-S3 default encryption is supported for server access log destination buckets.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From Console:
+
+Login to AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/
+
+Select the Check box next to the Bucket.
+
+Click on 'Properties'.
+
+Click on Default Encryption.
+
+Select either AES-256 or AWS-KMS
+
+Click Save
+
+Repeat for all the buckets in your AWS account lacking encryption.
+
+From Command Line:
+Run either
+
+aws s3api put-bucket-encryption --bucket <bucket name> --server-side-encryption-configuration '{'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'AES256'}}]}'
+
+or
+
+aws s3api put-bucket-encryption --bucket <bucket name> --server-side-encryption-configuration '{'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms','KMSMasterKeyID': 'aws/s3'}}]}'
+
+Note: the KMSMasterKeyID can be set to the master key of your choosing; aws/s3 is an AWS preconfigured default."
+  reference   : "CIS_Recommendation|2.1.1,CSCv7|14.8,CSCv8|3.11,LEVEL|2M,800-53|IA-5"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<custom_item>
+  type           : S3
+  description    : "2.1.2 Ensure S3 Bucket Policy is set to deny HTTP requests"
+  info           : "At the Amazon S3 bucket level, you can configure permissions through a bucket policy making the objects accessible only through HTTPS.
+
+  Rationale:
+
+  By default, Amazon S3 allows both HTTP and HTTPS requests. To achieve only allowing access to Amazon S3 objects through HTTPS you also have to explicitly deny access to HTTP requests. Bucket policies that allow HTTPS requests without explicitly denying HTTP requests will not comply with this recommendation.
+
+  NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution       : "From Console:
+
+  Login to AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/
+
+  Select the Check box next to the Bucket.
+
+  Click on 'Permissions'.
+
+  Click 'Bucket Policy'
+
+  Add this to the existing policy filling in the required information
+
+  {
+            'Sid': <optional>',
+            'Effect': 'Deny',
+            'Principal': '*',
+            'Action': 's3:GetObject',
+            'Resource': 'arn:aws:s3:::<bucket_name>/*',
+            'Condition': {
+                'Bool': {
+                    'aws:SecureTransport': 'false'
+                }
+            }
+        }
+
+  Save
+
+  Repeat for all the buckets in your AWS account that contain sensitive data.
+
+
+
+
+
+  From Console
+  using AWS Policy Generator:
+
+  Repeat steps 1-4 above.
+
+  Click on Policy Generator at the bottom of the Bucket Policy Editor
+
+  Select Policy Type
+  S3 Bucket Policy
+
+  Add Statements
+  Effect = Deny
+  Principal = *
+  AWS Service = Amazon S3
+  Actions = GetObject
+  Amazon Resource Name =
+
+  Generate Policy
+
+  Copy the text and add it to the Bucket Policy.
+
+  From Command Line:
+
+  Export the bucket policy to a json file.
+
+  aws s3api get-bucket-policy --bucket <bucket_name> --query Policy --output text > policy.json
+
+  Modify the policy.json file by adding in this statement:
+
+  {
+            'Sid': <optional>',
+            'Effect': 'Deny',
+            'Principal': '*',
+            'Action': 's3:GetObject',
+            'Resource': 'arn:aws:s3:::<bucket_name>/*',
+            'Condition': {
+                'Bool': {
+                    'aws:SecureTransport': 'false'
+                }
+            }
+        }
+
+  Apply this modified policy back to the S3 bucket:
+
+  aws s3api put-bucket-policy --bucket <bucket_name> --policy file://policy.json"
+  reference      : "800-171|3.5.2,800-53|IA-5(1),CIS_Recommendation|2.1.2,CSCv7|14.4,CSF|PR.AC-1,ITSG-33|IA-5(1),LEVEL|2M,NESA|T5.2.3,QCSC-v1|5.2.2,QCSC-v1|13.2,SWIFT-CSCv1|4.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "GetBucketPolicy"
+  json_transform : 'if ((.Statement.Condition.Null[] == "true") and (.Statement.Condition.Bool[] == "false") and (.Statement.Action == "s3:GetObject") and (.Statement.Effect == "Deny")) then "HTTP requests denied" else "HTTP requests allowed" end'
+  regex          : "HTTP requests denied"
+  expect         : "HTTP requests denied"
+# Note: Variable @S3_BUCKET_NAME@ replaced with "S3_BUCKET_NAME" in field "bucket_name".
+  bucket_name    : "S3_BUCKET_NAME"
+</custom_item>
+
+<report type:"WARNING">
+  description : "2.1.4 Ensure all data in Amazon S3 has been discovered, classified and secured when required."
+  info        : "Amazon S3 buckets can contain sensitive data, that for security purposes should be discovered, monitored, classified and protected. Macie along with other 3rd party tools can automatically provide an inventory of Amazon S3 buckets.
+
+Rationale:
+
+Using a Cloud service or 3rd Party software to continuously monitor and automate the process of data discovery and classification for S3 buckets using machine learning and pattern matching is a strong defense in protecting that information.
+
+Amazon Macie is a fully managed data security and data privacy service that uses machine learning and pattern matching to discover and protect your sensitive data in AWS.
+
+Impact:
+
+There is a cost associated with using Amazon Macie. There is also typically a cost associated with 3rd Party tools that perform similar processes and protection.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Perform the steps below to enable and configure Amazon Macie
+From Console:
+
+Log on to the Macie console at https://console.aws.amazon.com/macie/
+
+Click Get started.
+
+Click Enable Macie.
+
+Setup a repository for sensitive data discovery results
+
+In the Left pane, under Settings, click Discovery results.
+
+Make sure Create bucket is selected.
+
+Create a bucket, enter a name for the bucket. The name must be unique across all S3 buckets. In addition, the name must start with a lowercase letter or a number.
+
+Click on Advanced.
+
+Block all public access, make sure Yes is selected.
+
+KMS encryption, specify the AWS KMS key that you want to use to encrypt the results. The key must be a symmetric, customer master key (CMK) that's in the same Region as the S3 bucket.
+
+Click on Save
+
+Create a job to discover sensitive data
+
+In the left pane, click S3 buckets. Macie displays a list of all the S3 buckets for your account.
+
+Select the check box for each bucket that you want Macie to analyze as part of the job
+
+Click Create job.
+
+Click Quick create.
+
+For the Name and description step, enter a name and, optionally, a description of the job.
+
+Then click Next.
+
+For the Review and create step, click Submit.
+
+Review your findings
+
+In the left pane, click Findings.
+
+To view the details of a specific finding, choose any field other than the check box for the finding.
+
+If you are using a 3rd Party tool to manage and protect your s3 data, follow the Vendor documentation for implementing and configuring that tool."
+  reference   : "CSCv7|5.1,CSCv8|3.1,LEVEL|2M,CIS_Recommendation|2.1.4,800-53|IA-5"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<custom_item>
+  type           : CLOUDTRAIL
+  description    : "3.2 Ensure CloudTrail log file validation is enabled"
+  info           : "CloudTrail log file validation creates a digitally signed digest file containing a hash of each log that CloudTrail writes to S3. These digest files can be used to determine whether a log file was changed, deleted, or unchanged after CloudTrail delivered the log. It is recommended that file validation be enabled on all CloudTrails.
+
+Rationale:
+
+Enabling log file validation will provide additional integrity checking of CloudTrail logs."
+  solution       : "Perform the following to enable log file validation on a given trail:
+From Console:
+
+Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/cloudtrail
+
+Click on Trails on the left navigation pane
+
+Click on target trail
+
+Within the S3 section click on the edit icon (pencil)
+
+Click Advanced
+
+Click on the Yes radio button in section Enable log file validation
+
+Click Save
+
+From Command Line:
+
+aws cloudtrail update-trail --name <trail_name> --enable-log-file-validation
+
+Note that periodic validation of logs using these digests can be performed by running the following command:
+
+aws cloudtrail validate-logs --trail-arn <trail_arn> --start-time <start_time> --end-time <end_time>
+
+Default Value:
+
+Not Enabled"
+  reference      : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9(4),CCE|CCE-78914-9,CIS_Recommendation|3.2,CN-L3|8.1.4.3(d),CSCv6|6,CSCv7|6,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.2,ITSG-33|AU-9(4),ITSG-33|AU-9(4)(a),ITSG-33|AU-9(4)(b),LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,NIAv2|SM5,NIAv2|SM6,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|5.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeTrails"
+  json_transform : 'if .[0].trailList == [] then "No Trails defined" else (.[0].trailList[] |
+                "\(.Name) - LogFileValidationEnabled = \(.LogFileValidationEnabled)") end'
+  regex          : "LogFileValidationEnabled = "
+  expect         : "LogFileValidationEnabled = true"
+</custom_item>
+
+<custom_item>
+  type           : CONFIG
+  description    : "3.5 Ensure AWS Config is enabled in all regions - 'Record all resources supported in this region'"
+  info           : "AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration item (AWS resource), relationships between configuration items (AWS resources), any configuration changes between resources. It is recommended AWS Config be enabled in all regions.
+
+Rationale:
+
+The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.
+
+Impact:
+
+It is recommended AWS Config be enabled in all regions."
+  solution       : "To implement AWS Config configuration:
+From Console:
+
+Select the region you want to focus on in the top right of the console
+
+Click Services
+
+Click Config
+
+Define which resources you want to record in the selected region
+
+Choose to include global resources (IAM resources)
+
+Specify an S3 bucket in the same account or in another managed AWS account
+
+Create an SNS Topic from the same AWS account or another managed AWS account
+
+From Command Line:
+
+Ensure there is an appropriate S3 bucket, SNS topic, and IAM role per the AWS Config Service prerequisites.
+
+Run this command to set up the configuration recorder
+
+aws configservice subscribe --s3-bucket my-config-bucket --sns-topic arn:aws:sns:us-east-1:012345678912:my-config-notice --iam-role arn:aws:iam::012345678912:role/myConfigRole
+
+Run this command to start the configuration recorder:
+
+start-configuration-recorder --configuration-recorder-name <value>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CCE|CCE-78917-2,CIS_Recommendation|3.5,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeConfigurationRecorders"
+  json_transform : '.[] | .ConfigurationRecorders[] |
+                "Name: " + .name + " - Record all resources supported in this region = " + (.recordingGroup.allSupported | tostring)'
+  regex          : "Record all resources supported in this region ="
+  expect         : "Record all resources supported in this region = true"
+</custom_item>
+
+<custom_item>
+  type           : CONFIG
+  description    : "3.5 Ensure AWS Config is enabled in all regions - 'Include global resources'"
+  info           : "AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration item (AWS resource), relationships between configuration items (AWS resources), any configuration changes between resources. It is recommended AWS Config be enabled in all regions.
+
+Rationale:
+
+The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.
+
+Impact:
+
+It is recommended AWS Config be enabled in all regions."
+  solution       : "To implement AWS Config configuration:
+From Console:
+
+Select the region you want to focus on in the top right of the console
+
+Click Services
+
+Click Config
+
+Define which resources you want to record in the selected region
+
+Choose to include global resources (IAM resources)
+
+Specify an S3 bucket in the same account or in another managed AWS account
+
+Create an SNS Topic from the same AWS account or another managed AWS account
+
+From Command Line:
+
+Ensure there is an appropriate S3 bucket, SNS topic, and IAM role per the AWS Config Service prerequisites.
+
+Run this command to set up the configuration recorder
+
+aws configservice subscribe --s3-bucket my-config-bucket --sns-topic arn:aws:sns:us-east-1:012345678912:my-config-notice --iam-role arn:aws:iam::012345678912:role/myConfigRole
+
+Run this command to start the configuration recorder:
+
+start-configuration-recorder --configuration-recorder-name <value>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CCE|CCE-78917-2,CIS_Recommendation|3.5,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeConfigurationRecorders"
+  json_transform : '.[] | .ConfigurationRecorders[] |
+                "Name: " + .name + " - Include global resources = " + (.recordingGroup.includeGlobalResourceTypes | tostring)'
+  regex          : "Include global resources ="
+  expect         : "Include global resources = true"
+</custom_item>
+
+<custom_item>
+  type           : CONFIG
+  description    : "3.5 Ensure AWS Config is enabled in all regions - 'Review defined S3 Bucket'"
+  info           : "AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration item (AWS resource), relationships between configuration items (AWS resources), any configuration changes between resources. It is recommended AWS Config be enabled in all regions.
+
+Rationale:
+
+The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.
+
+Impact:
+
+It is recommended AWS Config be enabled in all regions."
+  solution       : "To implement AWS Config configuration:
+From Console:
+
+Select the region you want to focus on in the top right of the console
+
+Click Services
+
+Click Config
+
+Define which resources you want to record in the selected region
+
+Choose to include global resources (IAM resources)
+
+Specify an S3 bucket in the same account or in another managed AWS account
+
+Create an SNS Topic from the same AWS account or another managed AWS account
+
+From Command Line:
+
+Ensure there is an appropriate S3 bucket, SNS topic, and IAM role per the AWS Config Service prerequisites.
+
+Run this command to set up the configuration recorder
+
+aws configservice subscribe --s3-bucket my-config-bucket --sns-topic arn:aws:sns:us-east-1:012345678912:my-config-notice --iam-role arn:aws:iam::012345678912:role/myConfigRole
+
+Run this command to start the configuration recorder:
+
+start-configuration-recorder --configuration-recorder-name <value>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CCE|CCE-78917-2,CIS_Recommendation|3.5,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeDeliveryChannels"
+  json_transform : '.[] | .DeliveryChannels[] |
+                "\(.name) - S3 Bucket = \(.s3BucketName // "No S3 Bucket Defined")"'
+  regex          : "S3 bucket ="
+  expect         : "S3 bucket = [^\s]+"
+</custom_item>
+
+<custom_item>
+  type           : CONFIG
+  description    : "3.5 Ensure AWS Config is enabled in all regions - 'Review defined SNS Topic'"
+  info           : "AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration item (AWS resource), relationships between configuration items (AWS resources), any configuration changes between resources. It is recommended AWS Config be enabled in all regions.
+
+Rationale:
+
+The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.
+
+Impact:
+
+It is recommended AWS Config be enabled in all regions."
+  solution       : "To implement AWS Config configuration:
+From Console:
+
+Select the region you want to focus on in the top right of the console
+
+Click Services
+
+Click Config
+
+Define which resources you want to record in the selected region
+
+Choose to include global resources (IAM resources)
+
+Specify an S3 bucket in the same account or in another managed AWS account
+
+Create an SNS Topic from the same AWS account or another managed AWS account
+
+From Command Line:
+
+Ensure there is an appropriate S3 bucket, SNS topic, and IAM role per the AWS Config Service prerequisites.
+
+Run this command to set up the configuration recorder
+
+aws configservice subscribe --s3-bucket my-config-bucket --sns-topic arn:aws:sns:us-east-1:012345678912:my-config-notice --iam-role arn:aws:iam::012345678912:role/myConfigRole
+
+Run this command to start the configuration recorder:
+
+start-configuration-recorder --configuration-recorder-name <value>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12c.,CCE|CCE-78917-2,CIS_Recommendation|3.5,CN-L3|7.1.3.3(a),CN-L3|7.1.3.3(b),CN-L3|7.1.3.3(c),CN-L3|8.1.3.5(a),CN-L3|8.1.3.5(b),CN-L3|8.1.4.3(a),CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ISO/IEC-27001|A.12.4.1,ITSG-33|AU-12c.,LEVEL|2A,NESA|T3.6.2,NESA|T3.6.5,NESA|T3.6.6,NIAv2|SM8,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4,TBA-FIISB|45.1.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeDeliveryChannels"
+  json_transform : '.[] | .DeliveryChannels[] |
+                "\(.name) - SNS Topic ARN = \(.snsTopicARN // "No SNS Topic Defined")"'
+  regex          : "SNS Topic ARN ="
+  expect         : "SNS Topic ARN = arn:"
+</custom_item>
+
+<custom_item>
+  type           : CLOUDTRAIL
+  description    : "3.7 Ensure CloudTrail logs are encrypted at rest using KMS CMKs"
+  info           : "AWS CloudTrail is a web service that records AWS API calls for an account and makes those logs available to users and resources in accordance with IAM policies. AWS Key Management Service (KMS) is a managed service that helps create and control the encryption keys used to encrypt account data, and uses Hardware Security Modules (HSMs) to protect the security of encryption keys. CloudTrail logs can be configured to leverage server side encryption (SSE) and KMS customer created master keys (CMK) to further protect CloudTrail logs. It is recommended that CloudTrail be configured to use SSE-KMS.
+
+Rationale:
+
+Configuring CloudTrail to use SSE-KMS provides additional confidentiality controls on log data as a given user must have S3 read permission on the corresponding log bucket and must be granted decrypt permission by the CMK policy.
+
+Impact:
+
+Customer created keys incur an additional cost. See https://aws.amazon.com/kms/pricing/ for more information."
+  solution       : "Perform the following to configure CloudTrail to use SSE-KMS:
+From Console:
+
+Sign in to the AWS Management Console and open the CloudTrail console at https://console.aws.amazon.com/cloudtrail
+
+In the left navigation pane, choose Trails .
+
+Click on a Trail
+
+Under the S3 section click on the edit button (pencil icon)
+
+Click Advanced
+
+Select an existing CMK from the KMS key Id drop-down menu
+
+Note: Ensure the CMK is located in the same region as the S3 bucket
+
+Note: You will need to apply a KMS Key policy on the selected CMK in order for CloudTrail as a service to encrypt and decrypt log files using the CMK provided. Steps are provided here for editing the selected CMK Key policy
+
+Click Save
+
+You will see a notification message stating that you need to have decrypt permissions on the specified KMS key to decrypt log files.
+
+Click Yes
+
+From Command Line:
+
+aws cloudtrail update-trail --name <trail_name>  --kms-id <cloudtrail_kms_key>
+aws kms put-key-policy --key-id <cloudtrail_kms_key> --policy <cloudtrail_kms_key_policy>"
+  reference      : "800-171|3.13.16,800-53|SC-28(1),CCE|CCE-78919-8,CIS_Recommendation|3.7,CN-L3|8.1.4.7(b),CN-L3|8.1.4.8(b),CSCv6|6,CSCv7|6,CSCv7|14.8,CSF|PR.DS-1,ITSG-33|SC-28(1),LEVEL|2A,QCSC-v1|5.2.2,QCSC-v1|6.2,TBA-FIISB|28.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeTrails"
+  json_transform : 'if .[0].trailList == [] then "No Trails defined" else .[0].trailList[] end |
+                "\(.Name) - KmsKeyId = \(.KmsKeyId // "No Key Defined")"'
+  regex          : "KmsKeyId = "
+  not_expect     : "KmsKeyId = No Key Defined"
+</custom_item>
+
+<custom_item>
+  type           : KMS
+  description    : "3.8 Ensure rotation for customer created CMKs is enabled"
+  info           : "AWS Key Management Service (KMS) allows customers to rotate the backing key which is key material stored within the KMS which is tied to the key ID of the Customer Created customer master key (CMK). It is the backing key that is used to perform cryptographic operations such as encryption and decryption. Automated key rotation currently retains all prior backing keys so that decryption of encrypted data can take place transparently. It is recommended that CMK key rotation be enabled.
+
+Rationale:
+
+Rotating encryption keys helps reduce the potential impact of a compromised key as data encrypted with a new key cannot be accessed with a previous key that may have been exposed."
+  solution       : "From Console:
+
+Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam.
+
+In the left navigation pane, choose Encryption Keys .
+
+Select a customer created master key (CMK)
+
+Under the Key Policy section, move down to Key Rotation .
+
+Check the Rotate this key every year checkbox.
+
+From Command Line:
+
+Run the following command to enable key rotation:
+
+  aws kms enable-key-rotation --key-id <kms_key_id>"
+  reference      : "800-171|3.4.3,800-53|CM-3(6),CCE|CCE-78920-6,CIS_Recommendation|3.8,CN-L3|8.1.10.6(g),CSCv6|6,CSCv7|6,CSCv7|14.8,CSF|PR.IP-1,CSF|PR.IP-3,ISO/IEC-27001|A.10.1.1,ITSG-33|CM-3,LEVEL|2A,NESA|T3.2.3,NESA|T3.3.2,NESA|T7.5.1,NESA|T7.6.1,NESA|T7.6.2,NESA|T7.6.3,NIAv2|CM1,NIAv2|CM1a,NIAv2|CM1b,NIAv2|CM1c,QCSC-v1|3.2,QCSC-v1|5.2.1,QCSC-v1|6.2,QCSC-v1|7.2,QCSC-v1|8.2.1"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "GetKeyRotationStatus"
+  json_transform : '.[] | (.KeyRotationEnabled| tostring) as $Enabled |
+                "Key ID: " + .KeyId + " - KeyRotationEnabled = " + $Enabled'
+  regex          : "KeyRotationEnabled ="
+  not_expect     : "KeyRotationEnabled = false"
+</custom_item>
+
+<report type:"WARNING">
+  description : "3.9 Ensure VPC flow logging is enabled in all VPCs"
+  info        : "VPC Flow Logs is a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC. After you've created a flow log, you can view and retrieve its data in Amazon CloudWatch Logs. It is recommended that VPC Flow Logs be enabled for packet 'Rejects' for VPCs.
+
+Rationale:
+
+VPC Flow Logs provide visibility into network traffic that traverses the VPC and can be used to detect anomalous traffic or insight during security workflows.
+
+Impact:
+
+By default, CloudWatch Logs will store Logs indefinitely unless a specific retention period is defined for the log group. When choosing the number of days to retain, keep in mind the average days it takes an organization to realize they have been breached is 210 days (at the time of this writing). Since additional time is required to research a breach, a minimum 365 day retention policy allows time for detection and research. You may also wish to archive the logs to a cheaper storage service rather than simply deleting them. See the following AWS resource to manage CloudWatch Logs retention periods:
+
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/SettingLogRetention.html
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "Perform the following to determine if VPC Flow logs is enabled:
+From Console:
+
+Sign into the management console
+
+Select Services then VPC
+
+In the left navigation pane, select Your VPCs
+
+Select a VPC
+
+In the right pane, select the Flow Logs tab.
+
+If no Flow Log exists, click Create Flow Log
+
+For Filter, select Reject
+
+Enter in a Role and Destination Log Group
+
+Click Create Log Flow
+
+Click on CloudWatch Logs Group
+
+Note: Setting the filter to 'Reject' will dramatically reduce the logging data accumulation for this recommendation and provide sufficient information for the purposes of breach detection, research and remediation. However, during periods of least privilege security group engineering, setting this the filter to 'All' can be very helpful in discovering existing traffic flows required for proper operation of an already running environment."
+  reference   : "CCE|CCE-79202-8,CIS_Recommendation|3.9,CSCv6|12.5,CSCv6|6.2,CSCv7|12.5,CSCv7|6.2,CSCv8|13.6,CSCv8|8.2,LEVEL|2A,800-53|SI-5,800-53|SI-4,800-53|AU-3,800-53|AU-12"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<report type:"WARNING">
+  description : "3.10 Ensure that Object-level logging for write events is enabled for S3 bucket"
+  info        : "S3 object-level API operations such as GetObject, DeleteObject, and PutObject are called data events. By default, CloudTrail trails don't log data events and so it is recommended to enable Object-level logging for S3 buckets.
+
+Rationale:
+
+Enabling object-level logging will help you meet data compliance requirements within your organization, perform comprehensive security analysis, monitor specific patterns of user behavior in your AWS account or take immediate actions on any object-level API activity within your S3 Buckets using Amazon CloudWatch Events.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From Console:
+
+Login to the AWS Management Console and navigate to S3 dashboard at https://console.aws.amazon.com/s3/
+
+In the left navigation panel, click buckets and then click on the S3 Bucket Name that you want to examine.
+
+Click Properties tab to see in detail bucket configuration.
+
+Click on the Object-level logging setting, enter the CloudTrail name for the recording activity. You can choose an existing Cloudtrail or create a new one by navigating to the Cloudtrail console link https://console.aws.amazon.com/cloudtrail/
+
+Once the Cloudtrail is selected, check the Write event checkbox, so that object-level logging for Write events is enabled.
+
+Repeat steps 2 to 5 to enable object-level logging of write events for other S3 buckets.
+
+From Command Line:
+
+To enable object-level data events logging for S3 buckets within your AWS account, run put-event-selectors command using the name of the trail that you want to reconfigure as identifier:
+
+aws cloudtrail put-event-selectors --region <region-name> --trail-name <trail-name> --event-selectors '[{ 'ReadWriteType': 'WriteOnly', 'IncludeManagementEvents':true, 'DataResources': [{ 'Type': 'AWS::S3::Object', 'Values': ['arn:aws:s3:::<s3-bucket-name>/'] }] }]'
+
+The command output will be object-level event trail configuration.
+
+If you want to enable it for all buckets at once then change Values parameter to ['arn:aws:s3'] in command given above.
+
+Repeat step 1 for each s3 bucket to update object-level logging of write events.
+
+Change the AWS region by updating the --region command parameter and perform the process for other regions."
+  reference   : "CIS_Recommendation|3.10,CSCv7|6.2,CSCv7|6.3,CSCv8|8.5,LEVEL|2A,800-53|AU-3,800-53|AU-12"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<report type:"WARNING">
+  description : "3.11 Ensure that Object-level logging for read events is enabled for S3 bucket"
+  info        : "S3 object-level API operations such as GetObject, DeleteObject, and PutObject are called data events. By default, CloudTrail trails don't log data events and so it is recommended to enable Object-level logging for S3 buckets.
+
+Rationale:
+
+Enabling object-level logging will help you meet data compliance requirements within your organization, perform comprehensive security analysis, monitor specific patterns of user behavior in your AWS account or take immediate actions on any object-level API activity using Amazon CloudWatch Events.
+
+NOTE: Nessus has not performed this check. Please review the benchmark to ensure target compliance."
+  solution    : "From Console:
+
+Login to the AWS Management Console and navigate to S3 dashboard at https://console.aws.amazon.com/s3/
+
+In the left navigation panel, click buckets and then click on the S3 Bucket Name that you want to examine.
+
+Click Properties tab to see in detail bucket configuration.
+
+Click on the Object-level logging setting, enter the CloudTrail name for the recording activity. You can choose an existing Cloudtrail or create a new one by navigating to the Cloudtrail console link https://console.aws.amazon.com/cloudtrail/
+
+Once the Cloudtrail is selected, check the Read event checkbox, so that object-level logging for Read events is enabled.
+
+Repeat steps 2 to 5 to enable object-level logging of read events for other S3 buckets.
+
+From Command Line:
+
+To enable object-level data events logging for S3 buckets within your AWS account, run put-event-selectors command using the name of the trail that you want to reconfigure as identifier:
+
+aws cloudtrail put-event-selectors --region <region-name> --trail-name <trail-name> --event-selectors '[{ 'ReadWriteType': 'ReadOnly', 'IncludeManagementEvents':true, 'DataResources': [{ 'Type': 'AWS::S3::Object', 'Values': ['arn:aws:s3:::<s3-bucket-name>/'] }] }]'
+
+The command output will be object-level event trail configuration.
+
+If you want to enable it for all buckets at ones then change Values parameter to ['arn:aws:s3'] in command given above.
+
+Repeat step 1 for each s3 bucket to update object-level logging of read events.
+
+Change the AWS region by updating the --region command parameter and perform the process for other regions."
+  reference   : "CIS_Recommendation|3.11,CSCv7|6.2,CSCv7|6.3,CSCv8|8.5,LEVEL|2A,800-53|AU-3"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+</report>
+
+<custom_item>
+  type           : LOGS
+  description    : "4.6 Ensure a log metric filter and alarm exist for AWS Management Console authentication failures - 'metric filter exists'"
+  info           : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for failed console authentication attempts.
+
+Rationale:
+
+Monitoring failed console logins may decrease lead time to detect an attempt to brute force a credential, which may provide an indicator, such as source IP, that can be used in other event correlation."
+  solution       : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS management Console Login Failures and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<console_signin_failure_metric>'  --metric-transformations metricName= '<console_signin_failure_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = ConsoleLogin) && ($.errorMessage = 'Failed authentication') }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<console_signin_failure_alarm>'  --metric-name  '<console_signin_failure_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CCE|CCE-79191-3,CIS_Recommendation|4.6,CSCv6|16,CSCv7|16,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeMetricFilters"
+  json_transform : '.[] | .metricFilters[] | .filterPattern'
+  expect         : '\{\s*\(\$\.eventName\s*=\s*(\\"|\')?ConsoleLogin(\\"|\')?\s*\)\s*\&\&\s*\(\$\.errorMessage\s*=\s*(\\"|\')?Failed\s*authentication(\\"|\')?\s*\)\s*\}'
+</custom_item>
+
+<custom_item>
+  type        : CLOUDWATCH
+  description : "4.6 Ensure a log metric filter and alarm exist for AWS Management Console authentication failures - 'alarm exists'"
+  info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for failed console authentication attempts.
+
+Rationale:
+
+Monitoring failed console logins may decrease lead time to detect an attempt to brute force a credential, which may provide an indicator, such as source IP, that can be used in other event correlation."
+  solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS management Console Login Failures and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<console_signin_failure_metric>'  --metric-transformations metricName= '<console_signin_failure_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = ConsoleLogin) && ($.errorMessage = 'Failed authentication') }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<console_signin_failure_alarm>'  --metric-name  '<console_signin_failure_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference   : "800-171|3.3.4,800-53|AU-5.,CCE|CCE-79191-3,CIS_Recommendation|4.6,CN-L3|7.1.3.3(e),CSCv6|16,CSCv7|16,CSF|PR.PT-1,ITSG-33|AU-5,LEVEL|2A,NESA|T3.6.2,QCSC-v1|8.2.1,QCSC-v1|13.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeAlarms"
+# Note: Variable @CONSOLE_METRIC_NAME@ replaced with "ManagementConsoleAuthFailures" in field "<xsl".
+  xsl_stmt    : "<xsl:template match=\"/\">
+<xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+<xsl:if test=\"cloudwatch:MetricName='ManagementConsoleAuthFailures'\">
+Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+</xsl:if>
+</xsl:for-each>
+</xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @CONSOLE_METRIC_NAME@ replaced with "ManagementConsoleAuthFailures" in field "expect".
+  expect      : "Metric ManagementConsoleAuthFailures has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+</custom_item>
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type        : CLOUDWATCH
+      description : "alarm exists"
+      aws_action  : "DescribeAlarms"
+# Note: Variable @CONSOLE_METRIC_NAME@ replaced with "ManagementConsoleAuthFailures" in field "<xsl".
+      xsl_stmt    : "<xsl:template match=\"/\">
+        <xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+        <xsl:if test=\"cloudwatch:MetricName='ManagementConsoleAuthFailures'\">
+        Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+        </xsl:if>
+        </xsl:for-each>
+        </xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @CONSOLE_METRIC_NAME@ replaced with "ManagementConsoleAuthFailures" in field "expect".
+      expect      : "Metric ManagementConsoleAuthFailures has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+    </custom_item>
+
+    <custom_item>
+      type        : SNS
+      description : "subscription exists"
+      aws_action  : "ListSubscriptions"
+      xsl_stmt    : "<xsl:template match=\"/\"><xsl:for-each select=\"//sns:ListSubscriptionsResult/sns:Subscriptions/sns:member\">Subscription found: <xsl:value-of select=\"sns:TopicArn\" /> with endpoint of <xsl:value-of select=\"sns:Endpoint\"/></xsl:for-each></xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+      expect      : "Subscription found: arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark with endpoint of .*$"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "4.6 Ensure a log metric filter and alarm exist for AWS Management Console authentication failures - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for failed console authentication attempts.
+
+Rationale:
+
+Monitoring failed console logins may decrease lead time to detect an attempt to brute force a credential, which may provide an indicator, such as source IP, that can be used in other event correlation."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS management Console Login Failures and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<console_signin_failure_metric>'  --metric-transformations metricName= '<console_signin_failure_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = ConsoleLogin) && ($.errorMessage = 'Failed authentication') }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<console_signin_failure_alarm>'  --metric-name  '<console_signin_failure_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79191-3,CIS_Recommendation|4.6,CSCv6|6.5,CSCv6|6.7,CSCv7|16,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </then>
+
+  <else>
+    <report type:"FAILED">
+      description : "4.6 Ensure a log metric filter and alarm exist for AWS Management Console authentication failures - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for failed console authentication attempts.
+
+Rationale:
+
+Monitoring failed console logins may decrease lead time to detect an attempt to brute force a credential, which may provide an indicator, such as source IP, that can be used in other event correlation."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS management Console Login Failures and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<console_signin_failure_metric>'  --metric-transformations metricName= '<console_signin_failure_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = ConsoleLogin) && ($.errorMessage = 'Failed authentication') }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<console_signin_failure_alarm>'  --metric-name  '<console_signin_failure_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79191-3,CIS_Recommendation|4.6,CSCv6|6.5,CSCv6|6.7,CSCv7|16,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </else>
+</if>
+
+<custom_item>
+  type           : LOGS
+  description    : "4.7 Ensure a log metric filter and alarm exist for disabling or scheduled deletion of customer created CMKs - 'metric filter exists'"
+  info           : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for customer created CMKs which have changed state to disabled or scheduled deletion.
+
+Rationale:
+
+Data encrypted with disabled or deleted keys will no longer be accessible."
+  solution       : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for disabled or scheduled for deletion CMK's and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<disable_or_delete_cmk_changes_metric>'  --metric-transformations metricName= '<disable_or_delete_cmk_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<disable_or_delete_cmk_changes_alarm>'  --metric-name  '<disable_or_delete_cmk_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CCE|CCE-79192-1,CIS_Recommendation|4.7,CSCv6|16,CSCv7|16,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeMetricFilters"
+  json_transform : '.[] | .metricFilters[] | .filterPattern'
+  expect         : '\{\s*\s*\(\s*\$\.eventSource\s*\=\s*(\\"|\')?kms\.amazonaws\.com(\\"|\')?\s*\)\s*\&\&\s*\(\s*\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?DisableKey(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?ScheduleKeyDeletion(\\"|\')?\s*\)\s*\s*\)\s*\s*\}'
+</custom_item>
+
+<custom_item>
+  type        : CLOUDWATCH
+  description : "4.7 Ensure a log metric filter and alarm exist for disabling or scheduled deletion of customer created CMKs - 'alarm exists'"
+  info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for customer created CMKs which have changed state to disabled or scheduled deletion.
+
+Rationale:
+
+Data encrypted with disabled or deleted keys will no longer be accessible."
+  solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for disabled or scheduled for deletion CMK's and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<disable_or_delete_cmk_changes_metric>'  --metric-transformations metricName= '<disable_or_delete_cmk_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<disable_or_delete_cmk_changes_alarm>'  --metric-name  '<disable_or_delete_cmk_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference   : "800-171|3.3.4,800-53|AU-5.,CCE|CCE-79192-1,CIS_Recommendation|4.7,CN-L3|7.1.3.3(e),CSCv6|16,CSCv7|16,CSF|PR.PT-1,ITSG-33|AU-5,LEVEL|2A,NESA|T3.6.2,QCSC-v1|8.2.1,QCSC-v1|13.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeAlarms"
+# Note: Variable @CMK_METRIC_NAME@ replaced with "DisableOrDeleteCMKChanges" in field "<xsl".
+  xsl_stmt    : "<xsl:template match=\"/\">
+<xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+<xsl:if test=\"cloudwatch:MetricName='DisableOrDeleteCMKChanges'\">
+Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+</xsl:if>
+</xsl:for-each>
+</xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @CMK_METRIC_NAME@ replaced with "DisableOrDeleteCMKChanges" in field "expect".
+  expect      : "Metric DisableOrDeleteCMKChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+</custom_item>
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type        : CLOUDWATCH
+      description : "alarm exists"
+      aws_action  : "DescribeAlarms"
+# Note: Variable @CMK_METRIC_NAME@ replaced with "DisableOrDeleteCMKChanges" in field "<xsl".
+      xsl_stmt    : "<xsl:template match=\"/\">
+        <xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+        <xsl:if test=\"cloudwatch:MetricName='DisableOrDeleteCMKChanges'\">
+        Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+        </xsl:if>
+        </xsl:for-each>
+        </xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @CMK_METRIC_NAME@ replaced with "DisableOrDeleteCMKChanges" in field "expect".
+      expect      : "Metric DisableOrDeleteCMKChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+    </custom_item>
+
+    <custom_item>
+      type        : SNS
+      description : "subscription exists"
+      aws_action  : "ListSubscriptions"
+      xsl_stmt    : "<xsl:template match=\"/\"><xsl:for-each select=\"//sns:ListSubscriptionsResult/sns:Subscriptions/sns:member\">Subscription found: <xsl:value-of select=\"sns:TopicArn\" /> with endpoint of <xsl:value-of select=\"sns:Endpoint\"/></xsl:for-each></xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+      expect      : "Subscription found: arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark with endpoint of .*$"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "4.7 Ensure a log metric filter and alarm exist for disabling or scheduled deletion of customer created CMKs - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for customer created CMKs which have changed state to disabled or scheduled deletion.
+
+Rationale:
+
+Data encrypted with disabled or deleted keys will no longer be accessible."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for disabled or scheduled for deletion CMK's and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<disable_or_delete_cmk_changes_metric>'  --metric-transformations metricName= '<disable_or_delete_cmk_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<disable_or_delete_cmk_changes_alarm>'  --metric-name  '<disable_or_delete_cmk_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79192-1,CIS_Recommendation|4.7,CSCv6|6.5,CSCv6|6.7,CSCv7|16,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </then>
+
+  <else>
+    <report type:"FAILED">
+      description : "4.7 Ensure a log metric filter and alarm exist for disabling or scheduled deletion of customer created CMKs - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for customer created CMKs which have changed state to disabled or scheduled deletion.
+
+Rationale:
+
+Data encrypted with disabled or deleted keys will no longer be accessible."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for disabled or scheduled for deletion CMK's and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<disable_or_delete_cmk_changes_metric>'  --metric-transformations metricName= '<disable_or_delete_cmk_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<disable_or_delete_cmk_changes_alarm>'  --metric-name  '<disable_or_delete_cmk_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79192-1,CIS_Recommendation|4.7,CSCv6|6.5,CSCv6|6.7,CSCv7|16,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </else>
+</if>
+
+<custom_item>
+  type           : LOGS
+  description    : "4.9 Ensure a log metric filter and alarm exist for AWS Config configuration changes - 'metric filter exists'"
+  info           : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for detecting changes to CloudTrail's configurations.
+
+Rationale:
+
+Monitoring changes to AWS Config configuration will help ensure sustained visibility of configuration items within the AWS account."
+  solution       : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS Configuration changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<aws_config_changes_metric>'  --metric-transformations metricName= '<aws_config_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<aws_config_changes_alarm>'  --metric-name  '<aws_config_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CCE|CCE-79194-7,CIS_Recommendation|4.9,CSCv6|1.4,CSCv6|11.2,CSCv6|16.1,CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeMetricFilters"
+  json_transform : '.[] | .metricFilters[] | .filterPattern'
+  expect         : '\{\s*\(\s*\$\.eventSource\s*\=\s*(\\"|\')?config\.amazonaws\.com(\\"|\')?\s*\)\s*\&\&\s*\(\s*\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?StopConfigurationRecorder(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?DeleteDeliveryChannel(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?PutDeliveryChannel(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*\=\s*(\\"|\')?PutConfigurationRecorder(\\"|\')?\s*\)\s*\s*\)\s*\}'
+</custom_item>
+
+<custom_item>
+  type        : CLOUDWATCH
+  description : "4.9 Ensure a log metric filter and alarm exist for AWS Config configuration changes - 'alarm exists'"
+  info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for detecting changes to CloudTrail's configurations.
+
+Rationale:
+
+Monitoring changes to AWS Config configuration will help ensure sustained visibility of configuration items within the AWS account."
+  solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS Configuration changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<aws_config_changes_metric>'  --metric-transformations metricName= '<aws_config_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<aws_config_changes_alarm>'  --metric-name  '<aws_config_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference   : "800-171|3.3.4,800-53|AU-5.,CCE|CCE-79194-7,CIS_Recommendation|4.9,CN-L3|7.1.3.3(e),CSCv6|1.4,CSCv6|11.2,CSCv6|16.1,CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSF|PR.PT-1,ITSG-33|AU-5,LEVEL|2A,NESA|T3.6.2,QCSC-v1|8.2.1,QCSC-v1|13.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeAlarms"
+# Note: Variable @AWS_CONFIG_METRIC_NAME@ replaced with "AWSConfigChanges" in field "<xsl".
+  xsl_stmt    : "<xsl:template match=\"/\">
+<xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+<xsl:if test=\"cloudwatch:MetricName='AWSConfigChanges'\">
+Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+</xsl:if>
+</xsl:for-each>
+</xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @AWS_CONFIG_METRIC_NAME@ replaced with "AWSConfigChanges" in field "expect".
+  expect      : "Metric AWSConfigChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+</custom_item>
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type        : CLOUDWATCH
+      description : "alarm exists"
+      aws_action  : "DescribeAlarms"
+# Note: Variable @AWS_CONFIG_METRIC_NAME@ replaced with "AWSConfigChanges" in field "<xsl".
+      xsl_stmt    : "<xsl:template match=\"/\">
+        <xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+        <xsl:if test=\"cloudwatch:MetricName='AWSConfigChanges'\">
+        Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+        </xsl:if>
+        </xsl:for-each>
+        </xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @AWS_CONFIG_METRIC_NAME@ replaced with "AWSConfigChanges" in field "expect".
+      expect      : "Metric AWSConfigChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+    </custom_item>
+
+    <custom_item>
+      type        : SNS
+      description : "subscription exists"
+      aws_action  : "ListSubscriptions"
+      xsl_stmt    : "<xsl:template match=\"/\"><xsl:for-each select=\"//sns:ListSubscriptionsResult/sns:Subscriptions/sns:member\">Subscription found: <xsl:value-of select=\"sns:TopicArn\" /> with endpoint of <xsl:value-of select=\"sns:Endpoint\"/></xsl:for-each></xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+      expect      : "Subscription found: arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark with endpoint of .*$"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "4.9 Ensure a log metric filter and alarm exist for AWS Config configuration changes - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for detecting changes to CloudTrail's configurations.
+
+Rationale:
+
+Monitoring changes to AWS Config configuration will help ensure sustained visibility of configuration items within the AWS account."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS Configuration changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<aws_config_changes_metric>'  --metric-transformations metricName= '<aws_config_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<aws_config_changes_alarm>'  --metric-name  '<aws_config_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79194-7,CIS_Recommendation|4.9,CSCv6|6.5,CSCv6|6.7,CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </then>
+
+  <else>
+    <report type:"FAILED">
+      description : "4.9 Ensure a log metric filter and alarm exist for AWS Config configuration changes - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for detecting changes to CloudTrail's configurations.
+
+Rationale:
+
+Monitoring changes to AWS Config configuration will help ensure sustained visibility of configuration items within the AWS account."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for AWS Configuration changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<aws_config_changes_metric>'  --metric-transformations metricName= '<aws_config_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder)) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<aws_config_changes_alarm>'  --metric-name  '<aws_config_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79194-7,CIS_Recommendation|4.9,CSCv6|6.5,CSCv6|6.7,CSCv7|1.4,CSCv7|11.2,CSCv7|16.1,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </else>
+</if>
+
+<custom_item>
+  type           : LOGS
+  description    : "4.10 Ensure a log metric filter and alarm exist for security group changes - 'metric filter exists'"
+  info           : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. Security Groups are a stateful packet filter that controls ingress and egress traffic within a VPC. It is recommended that a metric filter and alarm be established for detecting changes to Security Groups.
+
+Rationale:
+
+Monitoring changes to security group will help ensure that resources and services are not unintentionally exposed."
+  solution       : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for security groups changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name '<cloudtrail_log_group_name>' --filter-name  '<security_group_changes_metric>'  --metric-transformations metricName= '<security_group_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name '<sns_topic_name>'
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn '<sns_topic_arn>' --protocol <protocol_for_sns> --notification-endpoint '<sns_subscription_endpoints>'
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<security_group_changes_alarm>'  --metric-name  '<security_group_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions '<sns_topic_arn>'"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CCE|CCE-79195-4,CIS_Recommendation|4.10,CSCv6|4.8,CSCv7|6.2,CSCv7|14.6,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeMetricFilters"
+  json_transform : '.[] | .metricFilters[] | .filterPattern'
+  expect         : '{\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?AuthorizeSecurityGroupIngress(\\"|\')?\s*\)\s*\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?AuthorizeSecurityGroupEgress(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?RevokeSecurityGroupIngress(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?RevokeSecurityGroupEgress(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?CreateSecurityGroup(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?DeleteSecurityGroup(\\"|\')?\s*\)\s*}'
+</custom_item>
+
+<custom_item>
+  type        : CLOUDWATCH
+  description : "4.10 Ensure a log metric filter and alarm exist for security group changes - 'alarm exists'"
+  info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. Security Groups are a stateful packet filter that controls ingress and egress traffic within a VPC. It is recommended that a metric filter and alarm be established for detecting changes to Security Groups.
+
+Rationale:
+
+Monitoring changes to security group will help ensure that resources and services are not unintentionally exposed."
+  solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for security groups changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name '<cloudtrail_log_group_name>' --filter-name  '<security_group_changes_metric>'  --metric-transformations metricName= '<security_group_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name '<sns_topic_name>'
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn '<sns_topic_arn>' --protocol <protocol_for_sns> --notification-endpoint '<sns_subscription_endpoints>'
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<security_group_changes_alarm>'  --metric-name  '<security_group_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions '<sns_topic_arn>'"
+  reference   : "800-171|3.3.4,800-53|AU-5.,CCE|CCE-79195-4,CIS_Recommendation|4.10,CN-L3|7.1.3.3(e),CSCv6|4.8,CSCv7|6.2,CSCv7|14.6,CSF|PR.PT-1,ITSG-33|AU-5,LEVEL|2A,NESA|T3.6.2,QCSC-v1|8.2.1,QCSC-v1|13.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeAlarms"
+# Note: Variable @SECURITY_GROUP_METRIC_NAME@ replaced with "SecurityGroupChanges" in field "<xsl".
+  xsl_stmt    : "<xsl:template match=\"/\">
+<xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+<xsl:if test=\"cloudwatch:MetricName='SecurityGroupChanges'\">
+Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+</xsl:if>
+</xsl:for-each>
+</xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @SECURITY_GROUP_METRIC_NAME@ replaced with "SecurityGroupChanges" in field "expect".
+  expect      : "Metric SecurityGroupChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+</custom_item>
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type        : CLOUDWATCH
+      description : "alarm exists"
+      aws_action  : "DescribeAlarms"
+# Note: Variable @SECURITY_GROUP_METRIC_NAME@ replaced with "SecurityGroupChanges" in field "<xsl".
+      xsl_stmt    : "<xsl:template match=\"/\">
+        <xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+        <xsl:if test=\"cloudwatch:MetricName='SecurityGroupChanges'\">
+        Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+        </xsl:if>
+        </xsl:for-each>
+        </xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @SECURITY_GROUP_METRIC_NAME@ replaced with "SecurityGroupChanges" in field "expect".
+      expect      : "Metric SecurityGroupChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+    </custom_item>
+
+    <custom_item>
+      type        : SNS
+      description : "subscription exists"
+      aws_action  : "ListSubscriptions"
+      xsl_stmt    : "<xsl:template match=\"/\"><xsl:for-each select=\"//sns:ListSubscriptionsResult/sns:Subscriptions/sns:member\">Subscription found: <xsl:value-of select=\"sns:TopicArn\" /> with endpoint of <xsl:value-of select=\"sns:Endpoint\"/></xsl:for-each></xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+      expect      : "Subscription found: arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark with endpoint of .*$"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "4.10 Ensure a log metric filter and alarm exist for security group changes - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. Security Groups are a stateful packet filter that controls ingress and egress traffic within a VPC. It is recommended that a metric filter and alarm be established for detecting changes to Security Groups.
+
+Rationale:
+
+Monitoring changes to security group will help ensure that resources and services are not unintentionally exposed."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for security groups changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name '<cloudtrail_log_group_name>' --filter-name  '<security_group_changes_metric>'  --metric-transformations metricName= '<security_group_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name '<sns_topic_name>'
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn '<sns_topic_arn>' --protocol <protocol_for_sns> --notification-endpoint '<sns_subscription_endpoints>'
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<security_group_changes_alarm>'  --metric-name  '<security_group_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions '<sns_topic_arn>'"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79195-4,CIS_Recommendation|4.10,CSCv6|6.5,CSCv6|6.7,CSCv7|14.6,CSCv7|6.2,CSCv8|3.3,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </then>
+
+  <else>
+    <report type:"FAILED">
+      description : "4.10 Ensure a log metric filter and alarm exist for security group changes - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. Security Groups are a stateful packet filter that controls ingress and egress traffic within a VPC. It is recommended that a metric filter and alarm be established for detecting changes to Security Groups.
+
+Rationale:
+
+Monitoring changes to security group will help ensure that resources and services are not unintentionally exposed."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for security groups changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name '<cloudtrail_log_group_name>' --filter-name  '<security_group_changes_metric>'  --metric-transformations metricName= '<security_group_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name '<sns_topic_name>'
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn '<sns_topic_arn>' --protocol <protocol_for_sns> --notification-endpoint '<sns_subscription_endpoints>'
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<security_group_changes_alarm>'  --metric-name  '<security_group_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions '<sns_topic_arn>'"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79195-4,CIS_Recommendation|4.10,CSCv6|6.5,CSCv6|6.7,CSCv7|14.6,CSCv7|6.2,CSCv8|3.3,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </else>
+</if>
+
+<custom_item>
+  type           : LOGS
+  description    : "4.11 Ensure a log metric filter and alarm exist for changes to Network Access Control Lists (NACL) - 'metric filter exists'"
+  info           : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. NACLs are used as a stateless packet filter to control ingress and egress traffic for subnets within a VPC. It is recommended that a metric filter and alarm be established for changes made to NACLs.
+
+Rationale:
+
+Monitoring changes to NACLs will help ensure that AWS resources and services are not unintentionally exposed."
+  solution       : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for NACL changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<nacl_changes_metric>'  --metric-transformations metricName= '<nacl_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<nacl_changes_alarm>'  --metric-name  '<nacl_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference      : "800-171|3.3.1,800-171|3.3.2,800-53|AU-12.,CCE|CCE-79196-2,CIS_Recommendation|4.11,CSCv6|11.3,CSCv7|11.3,CSF|DE.CM-1,CSF|DE.CM-3,CSF|DE.CM-7,CSF|PR.PT-1,ITSG-33|AU-12,LEVEL|2A,QCSC-v1|3.2,QCSC-v1|6.2,QCSC-v1|8.2.1,QCSC-v1|13.2,SWIFT-CSCv1|6.4"
+  see_also       : "https://workbench.cisecurity.org/files/3416"
+  aws_action     : "DescribeMetricFilters"
+  json_transform : '.[] | .metricFilters[] | .filterPattern'
+  expect         : '\{\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?CreateNetworkAcl(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?CreateNetworkAclEntry(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?DeleteNetworkAcl(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?DeleteNetworkAclEntry(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?ReplaceNetworkAclEntry(\\"|\')?\s*\)\s*\|\|\s*\(\s*\$\.eventName\s*=\s*(\\"|\')?ReplaceNetworkAclAssociation(\\"|\')?\s*\)\s*\}'
+</custom_item>
+
+<custom_item>
+  type        : CLOUDWATCH
+  description : "4.11 Ensure a log metric filter and alarm exist for changes to Network Access Control Lists (NACL) - 'alarm exists'"
+  info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. NACLs are used as a stateless packet filter to control ingress and egress traffic for subnets within a VPC. It is recommended that a metric filter and alarm be established for changes made to NACLs.
+
+Rationale:
+
+Monitoring changes to NACLs will help ensure that AWS resources and services are not unintentionally exposed."
+  solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for NACL changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<nacl_changes_metric>'  --metric-transformations metricName= '<nacl_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<nacl_changes_alarm>'  --metric-name  '<nacl_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+  reference   : "800-171|3.3.4,800-53|AU-5.,CCE|CCE-79196-2,CIS_Recommendation|4.11,CN-L3|7.1.3.3(e),CSCv6|11.3,CSCv7|11.3,CSF|PR.PT-1,ITSG-33|AU-5,LEVEL|2A,NESA|T3.6.2,QCSC-v1|8.2.1,QCSC-v1|13.2"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeAlarms"
+# Note: Variable @NACL_METRIC_NAME@ replaced with "NetworkACLChanges" in field "<xsl".
+  xsl_stmt    : "<xsl:template match=\"/\">
+<xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+<xsl:if test=\"cloudwatch:MetricName='NetworkACLChanges'\">
+Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+</xsl:if>
+</xsl:for-each>
+</xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @NACL_METRIC_NAME@ replaced with "NetworkACLChanges" in field "expect".
+  expect      : "Metric NetworkACLChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+</custom_item>
+
+<if>
+  <condition type:"AND">
+    <custom_item>
+      type        : CLOUDWATCH
+      description : "alarm exists"
+      aws_action  : "DescribeAlarms"
+# Note: Variable @NACL_METRIC_NAME@ replaced with "NetworkACLChanges" in field "<xsl".
+      xsl_stmt    : "<xsl:template match=\"/\">
+        <xsl:for-each select=\"//cloudwatch:MetricAlarms/cloudwatch:member\">
+        <xsl:if test=\"cloudwatch:MetricName='NetworkACLChanges'\">
+        Metric <xsl:value-of select=\"cloudwatch:MetricName\"/> has alarm action <xsl:value-of select=\"cloudwatch:AlarmActions/cloudwatch:member\" />
+        </xsl:if>
+        </xsl:for-each>
+        </xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+# Note: Variable @NACL_METRIC_NAME@ replaced with "NetworkACLChanges" in field "expect".
+      expect      : "Metric NetworkACLChanges has alarm action arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark"
+    </custom_item>
+
+    <custom_item>
+      type        : SNS
+      description : "subscription exists"
+      aws_action  : "ListSubscriptions"
+      xsl_stmt    : "<xsl:template match=\"/\"><xsl:for-each select=\"//sns:ListSubscriptionsResult/sns:Subscriptions/sns:member\">Subscription found: <xsl:value-of select=\"sns:TopicArn\" /> with endpoint of <xsl:value-of select=\"sns:Endpoint\"/></xsl:for-each></xsl:template>"
+# Note: Variable @ALARM_ARN@ replaced with "arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark" in field "expect".
+      expect      : "Subscription found: arn:aws:sns:us-east-1:757334363917:CIS-Foundations-Benchmark with endpoint of .*$"
+    </custom_item>
+  </condition>
+
+  <then>
+    <report type:"PASSED">
+      description : "4.11 Ensure a log metric filter and alarm exist for changes to Network Access Control Lists (NACL) - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. NACLs are used as a stateless packet filter to control ingress and egress traffic for subnets within a VPC. It is recommended that a metric filter and alarm be established for changes made to NACLs.
+
+Rationale:
+
+Monitoring changes to NACLs will help ensure that AWS resources and services are not unintentionally exposed."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for NACL changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<nacl_changes_metric>'  --metric-transformations metricName= '<nacl_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<nacl_changes_alarm>'  --metric-name  '<nacl_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79196-2,CIS_Recommendation|4.11,CSCv6|6.5,CSCv6|6.7,CSCv7|11.3,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </then>
+
+  <else>
+    <report type:"FAILED">
+      description : "4.11 Ensure a log metric filter and alarm exist for changes to Network Access Control Lists (NACL) - 'subscription exists'"
+      info        : "Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs and establishing corresponding metric filters and alarms. NACLs are used as a stateless packet filter to control ingress and egress traffic for subnets within a VPC. It is recommended that a metric filter and alarm be established for changes made to NACLs.
+
+Rationale:
+
+Monitoring changes to NACLs will help ensure that AWS resources and services are not unintentionally exposed."
+      solution    : "Perform the following to setup the metric filter, alarm, SNS topic, and subscription:
+
+Create a metric filter based on filter pattern provided which checks for NACL changes and the <cloudtrail_log_group_name> taken from audit step 1.
+
+aws logs put-metric-filter --log-group-name <cloudtrail_log_group_name> --filter-name  '<nacl_changes_metric>'  --metric-transformations metricName= '<nacl_changes_metric>' ,metricNamespace='CISBenchmark',metricValue=1 --filter-pattern '{ ($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation) }'
+
+Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together.
+
+Create an SNS topic that the alarm will notify
+
+aws sns create-topic --name <sns_topic_name>
+
+Note: you can execute this command once and then re-use the same topic for all monitoring alarms.
+
+Create an SNS subscription to the topic created in step 2
+
+aws sns subscribe --topic-arn <sns_topic_arn> --protocol <protocol_for_sns> --notification-endpoint <sns_subscription_endpoints>
+
+Note: you can execute this command once and then re-use the SNS subscription for all monitoring alarms.
+
+Create an alarm that is associated with the CloudWatch Logs Metric Filter created in step 1 and an SNS topic created in step 2
+
+aws cloudwatch put-metric-alarm --alarm-name  '<nacl_changes_alarm>'  --metric-name  '<nacl_changes_metric>'  --statistic Sum --period 300 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --namespace 'CISBenchmark' --alarm-actions <sns_topic_arn>"
+      reference   : "800-171|3.3.8,800-171|3.3.9,800-53|AU-9,CCE|CCE-79196-2,CIS_Recommendation|4.11,CSCv6|6.5,CSCv6|6.7,CSCv7|11.3,CSCv8|8.11,CSF|PR.PT-1,ITSG-33|AU-9,LEVEL|2A,NESA|M1.2.2,NESA|M5.2.3,NESA|M5.5.2,SWIFT-CSCv1|5.1"
+      see_also    : "https://workbench.cisecurity.org/files/3416"
+    </report>
+  </else>
+</if>
+
+<custom_item>
+  type        : EC2
+  description : "5.3 Ensure the default security group of every VPC restricts all traffic - 'No Inbound Rules exist"
+  info        : "A VPC comes with a default security group whose initial settings deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances assigned to the security group. If you don't specify a security group when you launch an instance, the instance is automatically assigned to this default security group. Security groups provide stateful filtering of ingress/egress network traffic to AWS resources. It is recommended that the default security group restrict all traffic.
+
+The default VPC in every region should have its default security group updated to comply. Any newly created VPCs will automatically contain a default security group that will need remediation to comply with this recommendation.
+
+NOTE: When implementing this recommendation, VPC flow logging is invaluable in determining the least privilege port access required by systems to work properly because it can log all packet acceptances and rejections occurring under the current security groups. This dramatically reduces the primary barrier to least privilege engineering - discovering the minimum ports required by systems in the environment. Even if the VPC flow logging recommendation in this benchmark is not adopted as a permanent security measure, it should be used during any period of discovery and engineering for least privileged security groups.
+
+Rationale:
+
+Configuring all VPC default security groups to restrict all traffic will encourage least privilege security group development and mindful placement of AWS resources into security groups which will in-turn reduce the exposure of those resources.
+
+Impact:
+
+Implementing this recommendation in an existing VPC containing operating resources requires extremely careful migration planning as the default security groups are likely to be enabling many ports that are unknown. Enabling VPC flow logging (of accepts) in an existing environment that is known to be breach free will reveal the current pattern of ports being used for each instance to communicate successfully."
+  solution    : "Security Group Members
+Perform the following to implement the prescribed state:
+
+Identify AWS resources that exist within the default security group
+
+Create a set of least privilege security groups for those resources
+
+Place the resources in those security groups
+
+Remove the resources noted in #1 from the default security group
+
+Security Group State
+
+Login to the AWS Management Console at https://console.aws.amazon.com/vpc/home
+
+Repeat the next steps for all VPCs - including the default VPC in each AWS region:
+
+In the left pane, click Security Groups
+
+For each default security group, perform the following:
+
+Select the default security group
+
+Click the Inbound Rules tab
+
+Remove any inbound rules
+
+Click the Outbound Rules tab
+
+Remove any inbound rules
+
+Recommended:
+IAM groups allow you to edit the 'name' field. After remediating default groups rules for all VPCs in all regions, edit this field to add text similar to 'DO NOT USE. DO NOT ADD RULES'"
+  reference   : "800-171|3.13.1,800-53|SC-7(9),800-53|SC-7(11),CCE|CCE-79201-0,CIS_Recommendation|5.3,CN-L3|8.1.10.6(j),CSCv6|14.6,CSCv7|14.6,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7(9),ITSG-33|SC-7(11),LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,NIAv2|GS7c,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|31.3,TBA-FIISB|43.1"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeSecurityGroups"
+  xsl_stmt    : "<xsl:template match=\"/\">
+  <xsl:choose>
+    <xsl:when test=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']\">
+      <xsl:choose>
+        <xsl:when test=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']/ec2:ipPermissions/ec2:item\">
+          <xsl:for-each select=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']/ec2:ipPermissions/ec2:item\">
+          <xsl:text>FAIL - Default Security Group with VPCID </xsl:text><xsl:value-of select=\"../../ec2:vpcId\"/><xsl:text> contains inbound rules.</xsl:text><xsl:text>&#10;</xsl:text>
+          </xsl:for-each>
+        </xsl:when>
+        <xsl:otherwise>
+        <xsl:text>PASS - No Default Security Groups in this region contain any inbound rules.</xsl:text><xsl:text>&#10;</xsl:text>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:when>
+    <xsl:otherwise>
+    <xsl:text>PASS - No VPCs in this region.</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+  </xsl:template>"
+  regex       : ".+"
+  expect      : "PASS \-.+"
+</custom_item>
+
+<custom_item>
+  type        : EC2
+  description : "5.3 Ensure the default security group of every VPC restricts all traffic - 'No Outbound Rules exist"
+  info        : "A VPC comes with a default security group whose initial settings deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances assigned to the security group. If you don't specify a security group when you launch an instance, the instance is automatically assigned to this default security group. Security groups provide stateful filtering of ingress/egress network traffic to AWS resources. It is recommended that the default security group restrict all traffic.
+
+The default VPC in every region should have its default security group updated to comply. Any newly created VPCs will automatically contain a default security group that will need remediation to comply with this recommendation.
+
+NOTE: When implementing this recommendation, VPC flow logging is invaluable in determining the least privilege port access required by systems to work properly because it can log all packet acceptances and rejections occurring under the current security groups. This dramatically reduces the primary barrier to least privilege engineering - discovering the minimum ports required by systems in the environment. Even if the VPC flow logging recommendation in this benchmark is not adopted as a permanent security measure, it should be used during any period of discovery and engineering for least privileged security groups.
+
+Rationale:
+
+Configuring all VPC default security groups to restrict all traffic will encourage least privilege security group development and mindful placement of AWS resources into security groups which will in-turn reduce the exposure of those resources.
+
+Impact:
+
+Implementing this recommendation in an existing VPC containing operating resources requires extremely careful migration planning as the default security groups are likely to be enabling many ports that are unknown. Enabling VPC flow logging (of accepts) in an existing environment that is known to be breach free will reveal the current pattern of ports being used for each instance to communicate successfully."
+  solution    : "Security Group Members
+Perform the following to implement the prescribed state:
+
+Identify AWS resources that exist within the default security group
+
+Create a set of least privilege security groups for those resources
+
+Place the resources in those security groups
+
+Remove the resources noted in #1 from the default security group
+
+Security Group State
+
+Login to the AWS Management Console at https://console.aws.amazon.com/vpc/home
+
+Repeat the next steps for all VPCs - including the default VPC in each AWS region:
+
+In the left pane, click Security Groups
+
+For each default security group, perform the following:
+
+Select the default security group
+
+Click the Inbound Rules tab
+
+Remove any inbound rules
+
+Click the Outbound Rules tab
+
+Remove any inbound rules
+
+Recommended:
+IAM groups allow you to edit the 'name' field. After remediating default groups rules for all VPCs in all regions, edit this field to add text similar to 'DO NOT USE. DO NOT ADD RULES'"
+  reference   : "800-171|3.13.1,800-53|SC-7(9),800-53|SC-7(11),CCE|CCE-79201-0,CIS_Recommendation|5.3,CN-L3|8.1.10.6(j),CSCv6|14.6,CSCv7|14.6,CSF|DE.CM-1,CSF|PR.AC-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7(9),ITSG-33|SC-7(11),LEVEL|2A,NESA|T4.5.4,NIAv2|GS1,NIAv2|GS2a,NIAv2|GS2b,NIAv2|GS7c,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|31.3,TBA-FIISB|43.1"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeSecurityGroups"
+  xsl_stmt    : "<xsl:template match=\"/\">
+  <xsl:choose>
+    <xsl:when test=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']\">
+      <xsl:choose>
+        <xsl:when test=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']/ec2:ipPermissionsEgress/ec2:item\">
+          <xsl:for-each select=\"//ec2:securityGroupInfo/ec2:item[ec2:groupName = 'default']/ec2:ipPermissionsEgress/ec2:item\">
+            <xsl:text>FAIL - Default Security Group with VPCID </xsl:text><xsl:value-of select=\"../../ec2:vpcId\"/><xsl:text> contains outbound rules.</xsl:text><xsl:text>&#10;</xsl:text>
+          </xsl:for-each>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:text>PASS - No Default Security Groups in this region contain any outbound rules.</xsl:text><xsl:text>&#10;</xsl:text>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>PASS - No VPCs in this region.</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>"
+  regex       : ".+"
+  expect      : "PASS \-.+"
+</custom_item>
+
+<custom_item>
+  type        : EC2
+  description : "5.4 Ensure routing tables for VPC peering are 'least access' - least access"
+  info        : "Once a VPC peering connection is established, routing tables must be updated to establish any connections between the peered VPCs. These routes can be as specific as desired - even peering a VPC to only a single host on the other side of the connection.
+
+Rationale:
+
+Being highly selective in peering routing tables is a very effective way of minimizing the impact of breach as resources outside of these routes are inaccessible to the peered VPC.
+
+NOTE: Nessus has provided the target output to assist in reviewing the benchmark to ensure target compliance."
+  solution    : "Remove and add route table entries to ensure that the least number of subnets or hosts as is required to accomplish the purpose for peering are routable.
+From Command Line:
+
+For each <route_table_id> containing routes non compliant with your routing policy (which grants more than desired 'least access'), delete the non compliant route:
+
+aws ec2 delete-route --route-table-id <route_table_id> --destination-cidr-block <non_compliant_destination_CIDR>
+
+
+
+Create a new compliant route:
+
+aws ec2 create-route --route-table-id <route_table_id> --destination-cidr-block <compliant_destination_CIDR> --vpc-peering-connection-id <peering_connection_id>"
+  reference   : "800-171|3.13.1,800-53|SC-7(15),CIS_Recommendation|5.4,CN-L3|8.1.10.6(j),CSCv6|14.6,CSCv7|14.6,CSF|PR.AC-5,CSF|PR.PT-4,ISO/IEC-27001|A.13.1.3,ITSG-33|SC-7(15),LEVEL|2M,NESA|T4.5.3,NIAv2|NS5c,NIAv2|NS6a,QCSC-v1|5.2.1,QCSC-v1|5.2.2,QCSC-v1|6.2,QCSC-v1|8.2.1,TBA-FIISB|43.1"
+  see_also    : "https://workbench.cisecurity.org/files/3416"
+  aws_action  : "DescribeRouteTables"
+  xsl_stmt    : "<xsl:template match=\"/\">
+  <xsl:for-each select=\"//ec2:routeTableSet\">
+    <xsl:for-each select=\"ec2:item\">
+      <xsl:text>VPC: </xsl:text><xsl:value-of select=\"ec2:vpcId\"/>
+      <xsl:text>&#10;</xsl:text>
+      <xsl:for-each select=\"ec2:routeSet/ec2:item\">
+        <xsl:text>Destination CIDR Block: </xsl:text><xsl:value-of select=\"ec2:destinationCidrBlock\"/><xsl:text> - Gateway ID: </xsl:text><xsl:value-of select=\"ec2:gatewayId\"/><xsl:text> (</xsl:text><xsl:value-of select=\"ec2:state\"/><xsl:text>)</xsl:text><xsl:text>&#10;</xsl:text>
+      </xsl:for-each>
+      <xsl:text>&#10;</xsl:text>
+    </xsl:for-each>
+  </xsl:for-each>
+</xsl:template>"
+  not_expect  : ".*"
+  severity    : MEDIUM
+</custom_item>
+
+</check_type>
